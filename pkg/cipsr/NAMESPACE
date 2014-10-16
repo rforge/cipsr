@@ -1,1 +1,2 @@
-exportPattern("^[[:alpha:]]+")
+export(".load.data",".cipsr")
+importFrom("raster", "rgdal", "rJava", "sp", "XLConnect")

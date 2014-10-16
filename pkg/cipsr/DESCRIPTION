@@ -7,4 +7,4 @@ Author: Nathaniel L Osborne, David Hann, Doug Maguire
 Maintainer: Nathaniel Osborne <nathaniel.osborne@oregonstate.edu>
 Description: CIPS-R was developed by Nathaniel Osborne, Doug Maguire and David Hann at the Center for Intensive Planted-forest Silviculture (CIPS).  CIPS is a research institute at Oregon State University in Corvallis, Oregon.  This package provides an interface to the Organon and Cipsanon forest growth, yield and wood quality models.  These models allow users to empirically simulate the development of forests, of many species given various silvicultural regimes.  Both models simulate forest development at the resolution of spatially implicit, individual trees.  Currently, CIPS-R cannot be distributed publically.  The use of CIPS-R is limited to members of the CIPS cooperative.     
 License: GPL (>=2)
-Depends: raster, rgdal, rJava, sp, XLConnect, R (>= 2.10.1) 
+Imports: raster, rgdal, rJava, sp, XLConnect
