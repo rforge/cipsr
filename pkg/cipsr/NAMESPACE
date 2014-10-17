@@ -1,2 +1,4 @@
-export(".load.data",".cipsr")
-importFrom("raster", "rgdal", "rJava", "sp", "XLConnect")
+export(load.data,cipsr)
+importFrom(XLConnect,readWorksheetFromFile)
+importFrom(XLConnect,writeWorksheetToFile)
+importFrom(raster,raster)

@@ -14,6 +14,9 @@
 	introtxt = "CIPS-R is an interface to Organon and Cipsanon developed at CIPS: Version 2.0"
 	packageStartupMessage(introtxt)
 	
+	# Required packages indicated in Imports section of namespace
+	suppressMessages(lapply(c("XLConnect","raster"), require, character.only=T))
+	
 	# Load and mask cipsr example data (maybe not necessary)!
 	data("cipsrexam", package="cipsr")
 	
@@ -22,10 +25,8 @@
 .OnAttach() # Run procedures after loading the program
 
 ## Function imports formatted Excel databases
-.load.data <- function( InputFile ) {
-	
-	suppressMessages(require(XLConnect))
-	
+load.data <- function( InputFile ) {
+		
 	## Ensure that the user-specified database exists in the working directory
 	if(!file.exists(InputFile)) {return(winDialog("ok","Input Database Does Not Exist."))}
 	
@@ -391,7 +392,7 @@
 }
 
 ## Function runs Organon and CIPSANON in R  
-.cipsr <- function( InputList ) {
+cipsr <- function( InputList ) {
 	
 	## Perform Program Start up tasks
 	
@@ -433,10 +434,7 @@
 	
 	## If the user plans to run the statistical version of Organon with climate and soils, prepare rasters
 	if(any(units$driver==1)) {	
-		
-		## Quietly load raster projecting packages which have noisy load messages
-		suppressMessages(lapply(c("sp","raster","rgdal"), require, character.only=T))
-		
+			
 		## Now load soil and weather coverages
 		rasters <- new.env() # Set up a raster enviornment to call
 		assign('whc50',raster(paste(spat,"whc50.img",sep="/")),envir=rasters) # Water holding capacity from 0 - 50 cm (%)
@@ -1426,7 +1424,6 @@
 		if(!file.exists(paste(home,"My Output",sep="/"))){dir.create(paste(home,"My Output",sep="/"),showWarnings=FALSE)}
 		
 		## Write the user-specified output to the output directory
-		suppressMessages(require(XLConnect)) # Load in case XLConnect not required yet
 		writeWorksheetToFile(paste(home,"My Output/cips_output.xls",sep="/"),data=spreadout,
 				sheet=c("treelist","samplelist","woodquality","standflags","treeflags"))			
 	}

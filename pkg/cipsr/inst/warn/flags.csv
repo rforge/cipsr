@@ -1,0 +1,95 @@
+flag,routine,level,type,code
+Number of trees,prepare,stand,error,1
+Incorrect version number,prepare,stand,error,2
+Not enough samples,prepare,stand,error,3
+Site Index,prepare,stand,error,4
+Major species,prepare,stand,error,5
+Breast height age for even-age,prepare,stand,error,6
+Breast height age for uneven-age,prepare,stand,error,7
+Stand age to small,prepare,stand,error,8
+Max SDI exceeded,prepare,stand,error,9
+Site index for RAP-ORGANON,prepare,stand,error,10
+PDEN for RAP-ORGANON,prepare,stand,error,11
+Even-age for RAP-ORGANON,prepare,stand,error,12
+Not enough alder basal area,prepare,stand,error,13
+Species Code,prepare,tree,error,1
+DBH,prepare,tree,error,2
+Height,prepare,tree,error,3
+Crown Ratio,prepare,tree,error,4
+Expansion Factor,prepare,tree,error,5
+Shadow Crown Ratio,prepare,tree,error,6
+Douglas-fir site index out of range,prepare,stand,warning,1
+Other site index out of range,prepare,stand,warning,2
+Tree heights to large,prepare,stand,warning,3
+Breast height age to young,prepare,stand,warning,4
+To many minor species,prepare,stand,warning,5
+Not enough sample trees,prepare,stand,warning,6
+Majority of input sample is to old,prepare,stand,warning,7
+Majority of projected sample is to old,prepare,stand,warning,8
+Height to DBH ratio,prepare,tree,warning,1
+Number of trees,execute,stand,error,1
+Incorrect version number,execute,stand,error,2
+Not enough samples,execute,stand,error,3
+Site index,execute,stand,error,4
+Major species,execute,stand,error,5
+Breast height age for even-age,execute,stand,error,6
+Breast height age for uneven-age,execute,stand,error,7
+Stand age to small,execute,stand,error,8
+Fertilized uneven age stand,execute,stand,error,9
+Fertilization variables specified wrong,execute,stand,error,10
+Fertilization timing out of bounds,execute,stand,error,11
+Fertilization rate out of bounds,execute,stand,error,12
+Cut more basal area that existed before,execute,stand,error,13
+Uncut stand silviculture variables,execute,stand,error,14
+Harvest timing is wrong,execute,stand,error,15
+Thinning variables,execute,stand,error,16
+Basal area before thinning less than zero,execute,stand,error,17
+Cut expansion factors ,execute,stand,error,18
+ORGANON cycle ,execute,stand,error,19
+Calibration factors,execute,stand,error,20
+Maximum stand density indices,execute,stand,error,21
+Genetic gain for uneven-age stand,execute,stand,error,22
+Negative genetic worth value,execute,stand,error,23
+Large genetic worth value,execute,stand,error,24
+No genetic gain value,execute,stand,error,25
+Swiss needle cast not supported in version,execute,stand,error,26
+Swiss needle cast in uneven-age stand,execute,stand,error,27
+To little foliage retention,execute,stand,error,28
+To much foliage retention,execute,stand,error,29
+Fertilized stand with to little foliage retention,execute,stand,error,30
+Foliage retention with no SNC present,execute,stand,error,31
+Site index for RAP-ORGANON,execute,stand,error,32
+PDEN for RAP-ORGANON,execute,stand,error,33
+Even-age for RAP-ORGANON,execute,stand,error,34
+Not enough alder basal area,execute,stand,error,35
+Species Code,execute,tree,error,1
+DBH,execute,tree,error,2
+Height,execute,tree,error,3
+Crown Ratio,execute,tree,error,4
+Expansion Factor,execute,tree,error,5
+Shadow Crown Ratio,execute,tree,error,6
+Douglas-fir site index out of range,execute,stand,warning,1
+Other site index out of range,execute,stand,warning,2
+Tree heights to large,execute,stand,warning,3
+Breast height age to young,execute,stand,warning,4
+To many minor species,execute,stand,warning,5
+Not enough sample trees,execute,stand,warning,6
+Majority of input sample is to old,execute,stand,warning,7
+Majority of projected sample is to old,execute,stand,warning,8
+Number of cycles will make the stand to old,execute,stand,warning,9
+Height to DBH ratio,execute,tree,warning,1
+CFSH > 4.5,volume,tree,error,1
+LOGML > LOGLL,volume,tree,error,2
+LOGTD > 0 but < 1,volume,tree,error,3
+LOGSH > 4.5,volume,tree,error,4
+LOGTA > 0 but < 1,volume,tree,error,5
+Species Code,volume,tree,error,1
+DBH,volume,tree,error,2
+Height,volume,tree,error,3
+Crown Ratio,volume,tree,error,4
+CFSH > 12,volume,tree,warning,1
+LOGLL < 8 or LOGLL > 40,volume,tree,warning,2
+LOGML < 8 or LOGML > 40,volume,tree,warning,3
+LOGTD > 12,volume,tree,warning,4
+LOGTA > 12,volume,tree,warning,5
+Height to DBH ratio,volume,tree,warning,1
