@@ -399,7 +399,7 @@ cipsr <- function( InputList ) {
 	# Identify directories used when running the program
 	home = getwd() # User workspace
 	root = path.package("cipsr") # Root directory for the cipsr package 
-	dlls = paste(root,"inst/dlls",sep="/") # Relative to root; location of dll files
+	dlls = paste(root,"src",sep="/") # Relative to root; location of dll files
 	spat = paste(root,"inst/spat",sep="/") # Relative to root; location of spatial files
 	warn = paste(root,"inst/warn",sep="/") # Relative to root; location of dll files
 	
