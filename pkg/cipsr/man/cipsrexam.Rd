@@ -2,10 +2,10 @@
 \alias{cipsrexam}
 \docType{data}
 \title{
-%%   ~~ data name/kind ... ~~
+Example dataset for use in the cipsr function
 }
 \description{
-%%  ~~ A concise (1-5 lines) description of the dataset. ~~
+This dataset contains tree, stand and silvicultural activities
 }
 \usage{data(cipsrexam)}
 \format{
@@ -73,16 +73,15 @@ List of 3
   ..$ target : num [1:8] 30 200 50 100 0.8 100 150 50
 }
 \details{
-%%  ~~ If necessary, more details than the __description__ above ~~
 }
 \source{
-%%  ~~ reference to a publication or URL from which the data were obtained ~~
+Obtained from David Hann 
 }
 \references{
-%%  ~~ possibly secondary sources and usages ~~
 }
 \examples{
 data(cipsrexam)
-## maybe str(cipsrexam) ; plot(cipsrexam) ...
+str(cipsrexam) 
+names(cipsrexam)
 }
 \keyword{datasets}
