@@ -15,10 +15,10 @@
 	packageStartupMessage(introtxt)
 	
 	# Required packages indicated in Imports section of namespace
-	suppressMessages(lapply(c("XLConnect","raster"), require, character.only=T))
+	#suppressMessages(lapply(c("XLConnect","raster"), require, character.only=T))
 	
 	# Load and mask cipsr example data (maybe not necessary)!
-	data("cipsrexam", package="cipsr")
+	#data("cipsrexam", package="cipsr")
 	
 }
 
