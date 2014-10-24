@@ -1,13 +1,19 @@
 \name{cipsrexam}
+
 \alias{cipsrexam}
+
 \docType{data}
+
 \title{
 Example dataset for use in the cipsr function
 }
+
 \description{
-This dataset contains tree, stand and silvicultural activities
+This dataset contains examples of tree, stand and silvicultural activities
 }
+
 \usage{data(cipsrexam)}
+
 \format{
   The format is:
 List of 3
@@ -72,16 +78,21 @@ List of 3
   ..$ metric : chr [1:8] "rel" "pounds" "rel" "bap" ...
   ..$ target : num [1:8] 30 200 50 100 0.8 100 150 50
 }
+
 \details{
 }
+
 \source{
 Obtained from David Hann 
 }
+
 \references{
 }
+
 \examples{
 data(cipsrexam)
 str(cipsrexam) 
 names(cipsrexam)
 }
+
 \keyword{datasets}
