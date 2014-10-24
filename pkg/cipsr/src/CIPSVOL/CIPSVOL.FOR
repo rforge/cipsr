@@ -247,7 +247,7 @@ C***********************************************************************
       INTEGER*4 ISP,ISPGRP,LOGLL
       INTEGER*4 II,SVOL,I,J,NW,NLG,NDI,NLOGTD
       REAL*4    EX,MH,AA1,AA2,A3,A4,A5,A6,A,B,C,V,ALP,D,T,ROOT,HM1,HM2
-      DLL_EXPORT LOG_TABLE
+C      DLL_EXPORT LOG_TABLE
 C
       LOGTA=XLOGTA/12.0
 C      LOGLL=LONG(XLOGLL)

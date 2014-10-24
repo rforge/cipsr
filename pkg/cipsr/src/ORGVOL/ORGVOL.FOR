@@ -8,7 +8,7 @@
       REAL*4      CFTD,CFSH,LOGLL,LOGML,LOGTD,LOGSH,LOGTA,DBH,HT,CR,
      1            XLOGTA,CFVOL,BFVOL
       LOGICAL*2   ERROR
-      DLL_EXPORT VOLCAL
+C      DLL_EXPORT VOLCAL
       IF(CFTD .LT. 0.0) CFTD=0.0
       IF(CFSH .LT. 0.0) CFSH=0.0
       IF(LOGTD .LE. 0.0) LOGTD=6.0
@@ -239,7 +239,7 @@ C
 C***********************************************************************
       SUBROUTINE GET_ORGVOL_EDITION(EDITION)
       REAL*4 EDITION
-      DLL_EXPORT GET_ORGVOL_EDITION
+C      DLL_EXPORT GET_ORGVOL_EDITION
       EDITION=9.1
       RETURN
       END
@@ -255,7 +255,7 @@ C***********************************************************************
       INTEGER*4 ISP,ISPGRP,LOGLL
       INTEGER*4 II,SVOL,I,J,NW,NLG,NDI,NLOGTD
       REAL*4    EX,MH,AA1,AA2,A3,A4,A5,A6,A,B,C,V,ALP,D,T,ROOT,HM1,HM2
-      DLL_EXPORT LOG_TABLE
+C      DLL_EXPORT LOG_TABLE
 C
       LOGTA=XLOGTA/12.0
       LOGLL=LONG(XLOGLL)

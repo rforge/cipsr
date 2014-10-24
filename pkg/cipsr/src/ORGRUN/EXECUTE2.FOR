@@ -1068,7 +1068,7 @@ C***********************************************************************
       SUBROUTINE GET_ORGRUN_EDITION(EDITION)
       IMPLICIT NONE
       REAL*4 EDITION
- C     DLL_EXPORT GET_ORGRUN_EDITION
+C     DLL_EXPORT GET_ORGRUN_EDITION
       EDITION=9.1
       RETURN
       END
