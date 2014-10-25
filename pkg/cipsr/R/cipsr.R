@@ -44,358 +44,358 @@ load.data <- function( InputFile ) {
 	return( InputList ) # Return the loaded inputlist
 }
 
-## Function contains the thinning and fertilization algorithms for Organon/Cipsanon
-.treatment <- function(executed,activity,triggers) {
-	
-	indicators = rep(0,2) # Treatment indicators [1] thinning, [2] fertilization; keys to what CIPSR should update
-	inform = list(indicators,NA,NA) # Initilize a list to reinform Organon with
-	if(nrow(activity)==0) return(inform) # If no activities are specified for the sample, return blank list
-	
-	## Evalulate if any activities should be triggered for the subperiod (1) using subperiod (0) information
-	trigger = matrix(ncol=6,nrow=nrow(activity),dimnames=list(1:nrow(activity),names(triggers)))
-	trigger[,2:6] = sapply(subset(names(triggers),names(triggers)!="year"),function(x){activity$trigger==x & triggers[[x]]>=activity$when}) # Evaluate greater than equal to statements
-	trigger[,1] = triggers$year==activity$when
-	
-	## Check for input that may generate fatal situations
-	fatal = 0 # Initialize to zero
-	fatal[length(unique(executed$stage[executed$subperiod==1]))==5] <- 1 # Cannot handle more than five thinnings
-	fatal[triggers$tpa<=50] <- 1 # Do not allow thinnings, where trees per acre below or at 50 TPA
-	
-	## If any triggering conditions were met, apply the user-specified treatment for subperiod (1)
-	if(any(trigger) & fatal==0) {
-		
-		## Extract the orders to act upon from the triggers
-		act = lapply(names(triggers), function(x) {
-					if(x=="year") {
-						activity[activity$trigger==x & triggers[[x]]==activity$when,]
-					} else {
-						activity[activity$trigger==x & triggers[[x]]>=activity$when,]
-					}
-				}
-		)
-		act = do.call("rbind",act) # Combine all orders into a single list
-		act = merge(activity,act,sort=F) # Preserve user-defined order; first orders take priority		
-		act = rbind(act[which(act$what=="thin"),][1,],act[which(act$what=="fert"),][1,]) # In the case of multiple orders, take just the first order  
-		act = act[complete.cases(act),] # Prohibit consideration of incomplete cases
-		
-		## * Begin the Thinning Algorithm * ##
-		if(any(act$what=="thin")) {
-			
-			## Reduce the executed treelist to only the most recent iteration and begin building the output object
-			# * Note that, expansion factors have already been divided by number of points in the input treelist object!
-			out = subset(executed,period==max(period,na.rm=TRUE) & subperiod==0) 
-			out$mgexp = out$expan # Cut tree expansion factor *! to be reduced during thinning
-			out$subperiod = 1 # The subperiod becomes equal to one
-			
-			## Extract user-supplied arguments to the thinning algorithm
-			how = act$how[act$what=="thin"] # Method of thinning
-			metric = act$metric[act$what=="thin"] # Metric associated with the target condition
-			target = as.numeric(act$target[act$what=="thin"]) # Target condition in units of the metric
-			target = round(target,1) # Only accept one decimal accuracy; convert if necessary
-			
-			## Assess feasibility of the proposed treatment	
-			fatal = 0 # Presume no fatal errors
-			# A special variant of CIPS-R allows for 'row below thinning'; if existing in activities list test for common errors
-			if("level" %in% names(act)){
-				level = act$level[act$how=="rowbelow"] # Level of row below thinning to be applied		
-				fatal[how=="rowbelow" & !(metric %in% c("bap","rel"))] <- 1 # Row below thinning only supports a basal area target for the residual stand
-				fatal[how=="rowbelow" & level<=0 | level>=1] <- 1 # Row thinning level must be a ratio between 0 and 1
-			}
-			# If row-below thinning specified, but no level argument existing, correct template not in use!
-			if(how=="rowbelow" & !("level" %in% names(act))) {fatal<-1; winDialog("ok","Need Level Argument to be Supplied")}
-			fatal[triggers$tpa==0] <- 1  # Trees per acre is zero
-			fatal[metric=="tpa" & triggers$tpa < target] <- 1 # Target trees per acre greater than current trees per acre
-			fatal[metric=="bap" & triggers$bap < target] <- 1 # Target basal area per acre greater than current basal area per acre
-			fatal[metric=="sdi" & triggers$sdi < target] <- 1 # Target stand density index greater than current stand density index
-			fatal[metric=="rel" & triggers$rel < target] <- 1 # Target relative density greater than current relative density
-			fatal[target < 0] <- 1 # The target sample condition was negative
-			fatal[how=="user" & metric!="prop"] <- 1 # User thin requested with out a proportion metric specified
-			fatal[how=="user" & !triggers$year %in% out$user] <- 1 # User thinning without the year indicator specified
-			if(fatal==1) winDialog("ok",paste("Infeasible Thinning:","Unit",unique(activity$unit))) # Report a fatal error if it occurs
-			
-			# Provided no fatal errors, procede into the thinning algorithms
-			if(fatal==0){
-				## Switch through a series of methods for thinning and apply the relevant approach
-				switch(how,
-						# Uniform thinning; all trees treated equal
-						"uniform"={
-							
-							## If simple metrics supplied, calculate using a ratio
-							if(metric%in%c("prop","tpa","bap")){
-								r = 0 # Amount to remove, initialized to zero
-								r[metric=="prop"] <- target 
-								r[metric=="tpa"] <- 1 - (target/triggers$tpa)   
-								r[metric=="bap"] <- (triggers$bap-target) / triggers$bap 
-								out$expan = out$expan - (r*out$expan) # Update expansion factors from thinning
-								out$mgexp = out$mgexp-out$expan # Reduce to find cut tree expansion factor
-								
-							} else {
-								
-								## If more complex metrics supplies, calculate with iterative reduction approach
-								
-								## If stand density metric supplied, iteratively reduce until the correct target reached
-								if(metric=="sdi"){
-									bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
-									qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
-									sdi = sum(out$expan)*(qmd/10)^1.605 # Stand density index
-									repeat{
-										out$expan=out$expan-0.001 # Remove expansion factor 
-										out$expan[out$expan<0] = 0 # No expansion factor may be below zero
-										bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
-										qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
-										sdi = sum(out$expan)*(qmd/10)^1.605 # Stand density index
-										if(all.equal(0,target-sdi,tolerance=0.1)==TRUE | sdi<target){break}  # Break when within three decimals of precise relative density
-									}
-								}
-								
-								## If relative density metric supplied, iteratively reduce until the correct target reached
-								if(metric=="rel"){
-									bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
-									qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
-									rel = bap/(qmd)^0.5 # Relative density, as calculated by Curtis
-									repeat{
-										out$expan=out$expan-0.001 # Remove expansion factor 
-										out$expan[out$expan<0] = 0 # No expansion factor may be below zero
-										bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
-										qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
-										rel = bap / (qmd)^0.5  # Relative density, as calculated by Curtis
-										if(all.equal(0,target-rel,tolerance=0.1)==TRUE | rel<target){break}  # Break when within four decimals of precise relative density
-										
-									}
-								}
-							}	
-						},
-						"below"={
-							## Sort tree list, provide index for assurances
-							out$index = 1:nrow(out) # Assign an index for 'assured' order
-							out$ba = pi*(out$dbh/2)^2/144*out$expan # Calculate basal area per acre for each tree
-							out = out[order(out$ba),] # Sort the tree list by diameter breast height (in) 		
-							
-							## If simple metrics supplied, calculate using a ratio
-							if(metric%in%c("prop","tpa","bap")){
-								r = 0 # Amount to remove, initialized to zero
-								r[metric=="prop"] <- target * triggers$bap # Basal area to remove
-								r[metric=="bap"] <- triggers$bap-target
-								r[metric=="tpa"] <- triggers$tpa-target # Trees to remove   
-								p = NA # The proportion of the expansion factor to remove as r goes to zero 
-								
-								## Application of thinning for basal area per acre and proportional targets
-								if(metric=="bap" | metric=="prop") {     
-									for(j in 1:nrow(out)) {
-										p[r>=out$ba[j]] <- 1
-										p[r<out$ba[j]] <- r/out$ba[j]
-										reduce=out$ba[j]*p
-										out$expan[j] <- out$expan[j]-out$expan[j]*p  
-										r = r-reduce   
-									}
-								}
-								
-								## Application of thinning for tree per acre, stand and relative density targets
-								if(metric=="tpa") {
-									for(j in 1:nrow(out)) {
-										p[r>=out$expan[j]] <- 1
-										p[r<out$expan[j]] <- r/out$expan[j]
-										reduce = out$expan[j]*p
-										out$expan[j] <- out$expan[j]-out$expan[j]*p  
-										r = r-reduce   
-									}
-								}
-								
-							} else {
-								
-								## If more complex metrics supplies, calculate with iterative reduction approach
-								if(metric%in%c("sdi","rel")){
-									
-									## If stand density metric supplied, reduce iteratively until target met
-									if(metric=="sdi"){
-										## Go in reverse order through the treelist, calculating RD to identify point at which removal must be specific
-										for(i in which(out$expan>0)){
-											bap = sum(pi*(out$dbh[1:i]/2)^2/144*out$expan[1:i]) # Basal area per acre
-											qmd = sqrt(bap/(0.005454*sum(out$expan[1:i]))) # Calculate quadratic mean diameter
-											sdi = sum(out$expan[1:i])*(qmd/10)^1.605 # Stand density index
-											# True/False statement; if target is nearly reached
-											if(sdi>(triggers$sdi-target)){break} # Identify break point to finely reduce the expansion factor
-										}
-										if(i>1){out$expan[1:(i-1)] <- 0} # Trees below k+1 point removed completed if k > 1	
-										
-										## Remove expansion factor until target reached
-										repeat{
-											out$expan[i]=out$expan[i]-0.001 # Remove expansion factor 
-											out$expan[out$expan<0] = 0 # No expansion factor may be below zero
-											bap = sum(pi*(out$dbh/2)^2/144*out$expan) # Basal area per acre
-											qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
-											sdi = sum(out$expan)*(qmd/10)^1.605 # Stand density index
-											if(all.equal(0,target-sdi,tolerance=0.01)==TRUE | sdi<target){break} # Break when within three decimals of precise relative density
-										}
-									}
-									
-									## If relative density metric supplied, reduce iteratively until target met
-									if(metric=="rel"){
-										## Go in reverse order through the treelist, calculating RD to identify point at which removal must be specific
-										for(i in which(out$expan>0)){
-											bap = sum(pi*(out$dbh[1:i]/2)^2/144*out$expan[1:i]) # Basal area per acre
-											qmd = sqrt(bap/(0.005454*sum(out$expan[1:i]))) # Calculate quadratic mean diameter
-											rel = bap/(qmd)^0.5 # Calculate relative density, under Curtis' definition
-											# True/False statement; if target is nearly reached
-											if(rel>(triggers$rel-target)){break} # Identify break point to finely reduce the expansion factor
-										}
-										if(i>1){out$expan[1:(i-1)] <- 0} # Trees below k point removed completed if k > 1	
-										repeat{
-											## Remove expansion factor until target reached
-											out$expan[i]=out$expan[i]-0.001 # Remove expansion factor 
-											out$expan[out$expan<0] = 0 # No expansion factor may be below zero
-											bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
-											qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
-											rel = bap / (qmd)^0.5  # Relative density, as calculated by Curtis
-											if(all.equal(0,target-rel,tolerance=0.1)==TRUE | rel<target){break} # Break when within three decimals of precise relative density
-										}
-									}							
-								}
-							}
-							
-							## Without respect to metric employed, finalize expansion factors in the same way
-							out$mgexp = out$mgexp-out$expan # Reduce to find cut tree expansion factor
-							out = out[order(out$index),] # Return to the orginal order
-							out = subset(out,select=-c(ba,index)) # Drop the basal area per tree and index columns
-						},
-						"rowbelow"={
-							
-							## Provided spreadsheet formatted for 'special procedure' apply row-below thinning (McTague and Osborne, 2013)
-							out$index = 1:nrow(out) # Assign an index value to ensure good sorting
-							out$dc = findInterval(out$dbh,seq(1,240,by=2))*2 # Bin into 2'' DBH (in) classes
-							out$bap = pi*(out$dbh/2)^2 /144 * out$expan # Calculate basal area each tree represents (sq ft/ac)
-							divide = aggregate(list(bap=out$bap),by=list(dc=out$dc),FUN=sum) # Calculate basal area by 2'' diameter class
-							divide = divide$dc[which.max(divide$bap)] # Identify maximum basal area for a given 2'' diameter class (division point)
-							
-							## [1] First cut trees uniformly; by row thinning given a user specified level
-							pr = 1-level # Proportion to remove by row thinning 
-							out$expan = pr*out$expan # Row thin trees at the given level; reducing expansion factors
-							
-							## [2] Second, cut all trees from the smallest diameter class
-							smallcut = out[out$expan!=0,] # Identify trees with expansion factors
-							smallcut = smallcut$index[smallcut$dc==min(smallcut$dc)] # Position (index) of the smallest trees
-							out$expan[smallcut] <- 0 # Set smallest trees expansion factors to zero         
-							
-							## [3] Third, cut 65% of the trees below the divide and 35% of the trees above the divide; dependent of metric employed
-							if(metric=="bap"){
-								
-								## Check for fatal errors, then proceed into routine
-								bap = sum(with(out,pi*(dbh/2)^2/144*(expan)))  # Calculate basal area per acre (ft2/ac)
-								fatal[target>=bap] <-1 # Fatal error; Not enough basal area left to meet target
-								
-								## Provided enough basal area exists, continue procedure
-								if(fatal==0){
-									r = 0.65*(bap-target) # Identify basal remove from below
-									out$bap = pi*(out$dbh/2)^2 /144 * out$expan # Calculate basal area each tree represents (sq ft/ac)
-									below = out[out$dc<divide,] # Tree's from below the mode
-									above = out[out$dc>=divide,] # Tree's from above the mode
-									
-									# If not possible to take 65% basal area from below, zero out all trees from below
-									if(r>sum(below$bap)){
-										below$expan=0 # Complete zero out expansion factors  
-									} else {
-										# Remove 65% of basal area from below
-										below$expan = r/sum(below$bap) * below$expan # Reduce expansion factors by the cut ratio (r/B)
-									}
-									
-									# Take remaining basal area from above	
-									out = rbind(above,below) # Recombine above and below split
-									bap = sum(with(out,pi*(dbh/2)^2/144*(expan))) # Recalculate total basal area per acre (ft2/ac)
-									r = bap-target # Update cut factor, for the above trees
-									out$expan[out$dc>=divide] <- with(out[out$dc>=divide,],expan-r/sum(bap)*expan) # Remove remaining basal area from above
-								}
-								
-							} else {
-								
-								## Check for fatal errors, then proceed into routine
-								bap = with(out,sum(dbh^2*0.005454*expan)) # Calculate basal area per acre (ft2/ac)
-								qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate Dq (in)
-								rel = bap/(qmd)^0.5 # Calculate relative density, under Curtis' definition
-								fatal[metric!="rel"] <- 1 # Fatal error; Something other than RD specified
-								fatal[target>=rel] <-1 # Fatal error; Not enough RD left to meet target
-								
-								if(fatal==0){
-									r = 0.65*(rel-target) # Identify percent of RD to remove from below
-									below = out[out$dc<divide,] # Tree's from below the mode
-									above = out[out$dc>=divide,] # Tree's from above the mode
-									
-									# Take 65% of RD from below, if possible; evaluate initial conditions to determine feasibility
-									bap = sum(pi*(below$dbh/2)^2/144*(below$expan)) # Basal area per acre
-									qmd = sqrt(bap/(0.005454*sum(below$expan))) # Calculate quadratic mean diameter
-									rel = bap / (qmd)^0.5  # Relative density, as calculated by Curtis
-									
-									# If not possible to take 65% RD from below, zero out all trees from below
-									if(r>rel){
-										r=r-rel # Reduce r, the amount of relative density to remove
-										below$expan=0 # Complete zero out expansion factors if 
-									} else {
-										# If possible to take 65% of RD from below, do so iteratively until target reached
-										repeat{
-											below$expan=below$expan-0.001 # Remove expansion factors, until r reduced to zero
-											below$expan[below$expan<0] = 0 # No expansion factor may be below zero
-											bap = sum(pi*(below$dbh/2)^2/144*(below$expan)) # Basal area per acre
-											qmd = sqrt(bap/(0.005454*sum(below$expan))) # Calculate quadratic mean diameter
-											r = r - (rel-(bap/(qmd)^0.5)) # Reduce r, by the prior calculated RD (i.e. Find the RD removed)
-											if(all.equal(0,r,tolerance=0.01)==TRUE) {break} # Break when approximate removal target reached
-											rel = bap/(qmd)^0.5  # Calculate relative density, as calculated by Curtis
-										}
-									}
-									## Remove remaining RD from above
-									out = rbind(above,below) # Recombine above and below split
-									bap = with(out,sum(dbh^2*0.005454*expan)) # Calculate basal area per acre (ft2/ac)
-									qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate Dq (in)
-									rel = bap/(qmd)^0.5 # Calculate relative density, under Curtis' definition
-									repeat{
-										out$expan[out$dc>=divide]=out$expan[out$dc>=divide]-0.001
-										out$expan[out$expan<0] = 0 # No expansion factor may be below zero
-										bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
-										qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
-										rel = bap/(qmd)^0.5 # Relative density, as calculated by Curtis
-										if(all.equal(1,target/rel,tolerance=0.01)==TRUE) {break} # Break when approximate removal target reached
-									}	
-									
-								}
-							}
-							
-							out = out[order(out$index),] # Reorder by the index
-							out = subset(out,select=-c(index,dc,bap)) # Drop columns used to the thinning procedure
-							out$mgexp = out$mgexp-out$expan # Find the cut tree expansion factor; see the earlier procedures
-							
-						},
-						"user"={
-							out$expan[out$user==triggers$year] <- out$expan[out$user==triggers$year] * (1-target)
-							out$mgexp = out$mgexp-out$expan # Reduce to find cut tree expansion factor
-						}
-				)
-			}
-			
-			inform[[1]][1][fatal==0] <- 1 # Indicate thinning, given no fatal errors
-			inform[[2]] = out # Submit the thinned tree list
-		}
-		
-		## * Begin the Fertilization Algorithm * ##
-		if(any(act$what=="fert")) {
-			
-			## Extract user-supplied arguments to the fertilization algorithm
-			how = act$how[act$what=="fert"] # Method of thinning
-			metric = act$metric[act$what=="fert"] # Metric associated with the target condition
-			target = as.numeric(act$target[act$what=="fert"]) # Target condition in units of the metric
-			out = target # Send out pound of nitrogen applied 
-			
-			inform[[1]][2] <- 1 # Indicate fertilization, given no fatal errors
-			inform[[3]] = out # Submit the fertilization output 
-			
-		}	
-	}
-	
-	return(inform) # Return information to inform Organon, based on indicator keys
-}
 
 ## Function runs Organon and CIPSANON in R  
 grow <- function( InputList ) {
 	
 	## Perform Program Start up tasks
-	
+	## Function contains the thinning and fertilization algorithms for Organon/Cipsanon
+	.treatment <- function(executed,activity,triggers) {
+		
+		indicators = rep(0,2) # Treatment indicators [1] thinning, [2] fertilization; keys to what CIPSR should update
+		inform = list(indicators,NA,NA) # Initilize a list to reinform Organon with
+		if(nrow(activity)==0) return(inform) # If no activities are specified for the sample, return blank list
+		
+		## Evalulate if any activities should be triggered for the subperiod (1) using subperiod (0) information
+		trigger = matrix(ncol=6,nrow=nrow(activity),dimnames=list(1:nrow(activity),names(triggers)))
+		trigger[,2:6] = sapply(subset(names(triggers),names(triggers)!="year"),function(x){activity$trigger==x & triggers[[x]]>=activity$when}) # Evaluate greater than equal to statements
+		trigger[,1] = triggers$year==activity$when
+		
+		## Check for input that may generate fatal situations
+		fatal = 0 # Initialize to zero
+		fatal[length(unique(executed$stage[executed$subperiod==1]))==5] <- 1 # Cannot handle more than five thinnings
+		fatal[triggers$tpa<=50] <- 1 # Do not allow thinnings, where trees per acre below or at 50 TPA
+		
+		## If any triggering conditions were met, apply the user-specified treatment for subperiod (1)
+		if(any(trigger) & fatal==0) {
+			
+			## Extract the orders to act upon from the triggers
+			act = lapply(names(triggers), function(x) {
+						if(x=="year") {
+							activity[activity$trigger==x & triggers[[x]]==activity$when,]
+						} else {
+							activity[activity$trigger==x & triggers[[x]]>=activity$when,]
+						}
+					}
+			)
+			act = do.call("rbind",act) # Combine all orders into a single list
+			act = merge(activity,act,sort=F) # Preserve user-defined order; first orders take priority		
+			act = rbind(act[which(act$what=="thin"),][1,],act[which(act$what=="fert"),][1,]) # In the case of multiple orders, take just the first order  
+			act = act[complete.cases(act),] # Prohibit consideration of incomplete cases
+			
+			## * Begin the Thinning Algorithm * ##
+			if(any(act$what=="thin")) {
+				
+				## Reduce the executed treelist to only the most recent iteration and begin building the output object
+				# * Note that, expansion factors have already been divided by number of points in the input treelist object!
+				out = subset(executed,period==max(period,na.rm=TRUE) & subperiod==0) 
+				out$mgexp = out$expan # Cut tree expansion factor *! to be reduced during thinning
+				out$subperiod = 1 # The subperiod becomes equal to one
+				
+				## Extract user-supplied arguments to the thinning algorithm
+				how = act$how[act$what=="thin"] # Method of thinning
+				metric = act$metric[act$what=="thin"] # Metric associated with the target condition
+				target = as.numeric(act$target[act$what=="thin"]) # Target condition in units of the metric
+				target = round(target,1) # Only accept one decimal accuracy; convert if necessary
+				
+				## Assess feasibility of the proposed treatment	
+				fatal = 0 # Presume no fatal errors
+				# A special variant of CIPS-R allows for 'row below thinning'; if existing in activities list test for common errors
+				if("level" %in% names(act)){
+					level = act$level[act$how=="rowbelow"] # Level of row below thinning to be applied		
+					fatal[how=="rowbelow" & !(metric %in% c("bap","rel"))] <- 1 # Row below thinning only supports a basal area target for the residual stand
+					fatal[how=="rowbelow" & level<=0 | level>=1] <- 1 # Row thinning level must be a ratio between 0 and 1
+				}
+				# If row-below thinning specified, but no level argument existing, correct template not in use!
+				if(how=="rowbelow" & !("level" %in% names(act))) {fatal<-1; winDialog("ok","Need Level Argument to be Supplied")}
+				fatal[triggers$tpa==0] <- 1  # Trees per acre is zero
+				fatal[metric=="tpa" & triggers$tpa < target] <- 1 # Target trees per acre greater than current trees per acre
+				fatal[metric=="bap" & triggers$bap < target] <- 1 # Target basal area per acre greater than current basal area per acre
+				fatal[metric=="sdi" & triggers$sdi < target] <- 1 # Target stand density index greater than current stand density index
+				fatal[metric=="rel" & triggers$rel < target] <- 1 # Target relative density greater than current relative density
+				fatal[target < 0] <- 1 # The target sample condition was negative
+				fatal[how=="user" & metric!="prop"] <- 1 # User thin requested with out a proportion metric specified
+				fatal[how=="user" & !triggers$year %in% out$user] <- 1 # User thinning without the year indicator specified
+				if(fatal==1) winDialog("ok",paste("Infeasible Thinning:","Unit",unique(activity$unit))) # Report a fatal error if it occurs
+				
+				# Provided no fatal errors, procede into the thinning algorithms
+				if(fatal==0){
+					## Switch through a series of methods for thinning and apply the relevant approach
+					switch(how,
+							# Uniform thinning; all trees treated equal
+							"uniform"={
+								
+								## If simple metrics supplied, calculate using a ratio
+								if(metric%in%c("prop","tpa","bap")){
+									r = 0 # Amount to remove, initialized to zero
+									r[metric=="prop"] <- target 
+									r[metric=="tpa"] <- 1 - (target/triggers$tpa)   
+									r[metric=="bap"] <- (triggers$bap-target) / triggers$bap 
+									out$expan = out$expan - (r*out$expan) # Update expansion factors from thinning
+									out$mgexp = out$mgexp-out$expan # Reduce to find cut tree expansion factor
+									
+								} else {
+									
+									## If more complex metrics supplies, calculate with iterative reduction approach
+									
+									## If stand density metric supplied, iteratively reduce until the correct target reached
+									if(metric=="sdi"){
+										bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
+										qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
+										sdi = sum(out$expan)*(qmd/10)^1.605 # Stand density index
+										repeat{
+											out$expan=out$expan-0.001 # Remove expansion factor 
+											out$expan[out$expan<0] = 0 # No expansion factor may be below zero
+											bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
+											qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
+											sdi = sum(out$expan)*(qmd/10)^1.605 # Stand density index
+											if(all.equal(0,target-sdi,tolerance=0.1)==TRUE | sdi<target){break}  # Break when within three decimals of precise relative density
+										}
+									}
+									
+									## If relative density metric supplied, iteratively reduce until the correct target reached
+									if(metric=="rel"){
+										bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
+										qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
+										rel = bap/(qmd)^0.5 # Relative density, as calculated by Curtis
+										repeat{
+											out$expan=out$expan-0.001 # Remove expansion factor 
+											out$expan[out$expan<0] = 0 # No expansion factor may be below zero
+											bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
+											qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
+											rel = bap / (qmd)^0.5  # Relative density, as calculated by Curtis
+											if(all.equal(0,target-rel,tolerance=0.1)==TRUE | rel<target){break}  # Break when within four decimals of precise relative density
+											
+										}
+									}
+								}	
+							},
+							"below"={
+								## Sort tree list, provide index for assurances
+								out$index = 1:nrow(out) # Assign an index for 'assured' order
+								out$ba = pi*(out$dbh/2)^2/144*out$expan # Calculate basal area per acre for each tree
+								out = out[order(out$ba),] # Sort the tree list by diameter breast height (in) 		
+								
+								## If simple metrics supplied, calculate using a ratio
+								if(metric%in%c("prop","tpa","bap")){
+									r = 0 # Amount to remove, initialized to zero
+									r[metric=="prop"] <- target * triggers$bap # Basal area to remove
+									r[metric=="bap"] <- triggers$bap-target
+									r[metric=="tpa"] <- triggers$tpa-target # Trees to remove   
+									p = NA # The proportion of the expansion factor to remove as r goes to zero 
+									
+									## Application of thinning for basal area per acre and proportional targets
+									if(metric=="bap" | metric=="prop") {     
+										for(j in 1:nrow(out)) {
+											p[r>=out$ba[j]] <- 1
+											p[r<out$ba[j]] <- r/out$ba[j]
+											reduce=out$ba[j]*p
+											out$expan[j] <- out$expan[j]-out$expan[j]*p  
+											r = r-reduce   
+										}
+									}
+									
+									## Application of thinning for tree per acre, stand and relative density targets
+									if(metric=="tpa") {
+										for(j in 1:nrow(out)) {
+											p[r>=out$expan[j]] <- 1
+											p[r<out$expan[j]] <- r/out$expan[j]
+											reduce = out$expan[j]*p
+											out$expan[j] <- out$expan[j]-out$expan[j]*p  
+											r = r-reduce   
+										}
+									}
+									
+								} else {
+									
+									## If more complex metrics supplies, calculate with iterative reduction approach
+									if(metric%in%c("sdi","rel")){
+										
+										## If stand density metric supplied, reduce iteratively until target met
+										if(metric=="sdi"){
+											## Go in reverse order through the treelist, calculating RD to identify point at which removal must be specific
+											for(i in which(out$expan>0)){
+												bap = sum(pi*(out$dbh[1:i]/2)^2/144*out$expan[1:i]) # Basal area per acre
+												qmd = sqrt(bap/(0.005454*sum(out$expan[1:i]))) # Calculate quadratic mean diameter
+												sdi = sum(out$expan[1:i])*(qmd/10)^1.605 # Stand density index
+												# True/False statement; if target is nearly reached
+												if(sdi>(triggers$sdi-target)){break} # Identify break point to finely reduce the expansion factor
+											}
+											if(i>1){out$expan[1:(i-1)] <- 0} # Trees below k+1 point removed completed if k > 1	
+											
+											## Remove expansion factor until target reached
+											repeat{
+												out$expan[i]=out$expan[i]-0.001 # Remove expansion factor 
+												out$expan[out$expan<0] = 0 # No expansion factor may be below zero
+												bap = sum(pi*(out$dbh/2)^2/144*out$expan) # Basal area per acre
+												qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
+												sdi = sum(out$expan)*(qmd/10)^1.605 # Stand density index
+												if(all.equal(0,target-sdi,tolerance=0.01)==TRUE | sdi<target){break} # Break when within three decimals of precise relative density
+											}
+										}
+										
+										## If relative density metric supplied, reduce iteratively until target met
+										if(metric=="rel"){
+											## Go in reverse order through the treelist, calculating RD to identify point at which removal must be specific
+											for(i in which(out$expan>0)){
+												bap = sum(pi*(out$dbh[1:i]/2)^2/144*out$expan[1:i]) # Basal area per acre
+												qmd = sqrt(bap/(0.005454*sum(out$expan[1:i]))) # Calculate quadratic mean diameter
+												rel = bap/(qmd)^0.5 # Calculate relative density, under Curtis' definition
+												# True/False statement; if target is nearly reached
+												if(rel>(triggers$rel-target)){break} # Identify break point to finely reduce the expansion factor
+											}
+											if(i>1){out$expan[1:(i-1)] <- 0} # Trees below k point removed completed if k > 1	
+											repeat{
+												## Remove expansion factor until target reached
+												out$expan[i]=out$expan[i]-0.001 # Remove expansion factor 
+												out$expan[out$expan<0] = 0 # No expansion factor may be below zero
+												bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
+												qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
+												rel = bap / (qmd)^0.5  # Relative density, as calculated by Curtis
+												if(all.equal(0,target-rel,tolerance=0.1)==TRUE | rel<target){break} # Break when within three decimals of precise relative density
+											}
+										}							
+									}
+								}
+								
+								## Without respect to metric employed, finalize expansion factors in the same way
+								out$mgexp = out$mgexp-out$expan # Reduce to find cut tree expansion factor
+								out = out[order(out$index),] # Return to the orginal order
+								out = subset(out,select=-c(ba,index)) # Drop the basal area per tree and index columns
+							},
+							"rowbelow"={
+								
+								## Provided spreadsheet formatted for 'special procedure' apply row-below thinning (McTague and Osborne, 2013)
+								out$index = 1:nrow(out) # Assign an index value to ensure good sorting
+								out$dc = findInterval(out$dbh,seq(1,240,by=2))*2 # Bin into 2'' DBH (in) classes
+								out$bap = pi*(out$dbh/2)^2 /144 * out$expan # Calculate basal area each tree represents (sq ft/ac)
+								divide = aggregate(list(bap=out$bap),by=list(dc=out$dc),FUN=sum) # Calculate basal area by 2'' diameter class
+								divide = divide$dc[which.max(divide$bap)] # Identify maximum basal area for a given 2'' diameter class (division point)
+								
+								## [1] First cut trees uniformly; by row thinning given a user specified level
+								pr = 1-level # Proportion to remove by row thinning 
+								out$expan = pr*out$expan # Row thin trees at the given level; reducing expansion factors
+								
+								## [2] Second, cut all trees from the smallest diameter class
+								smallcut = out[out$expan!=0,] # Identify trees with expansion factors
+								smallcut = smallcut$index[smallcut$dc==min(smallcut$dc)] # Position (index) of the smallest trees
+								out$expan[smallcut] <- 0 # Set smallest trees expansion factors to zero         
+								
+								## [3] Third, cut 65% of the trees below the divide and 35% of the trees above the divide; dependent of metric employed
+								if(metric=="bap"){
+									
+									## Check for fatal errors, then proceed into routine
+									bap = sum(with(out,pi*(dbh/2)^2/144*(expan)))  # Calculate basal area per acre (ft2/ac)
+									fatal[target>=bap] <-1 # Fatal error; Not enough basal area left to meet target
+									
+									## Provided enough basal area exists, continue procedure
+									if(fatal==0){
+										r = 0.65*(bap-target) # Identify basal remove from below
+										out$bap = pi*(out$dbh/2)^2 /144 * out$expan # Calculate basal area each tree represents (sq ft/ac)
+										below = out[out$dc<divide,] # Tree's from below the mode
+										above = out[out$dc>=divide,] # Tree's from above the mode
+										
+										# If not possible to take 65% basal area from below, zero out all trees from below
+										if(r>sum(below$bap)){
+											below$expan=0 # Complete zero out expansion factors  
+										} else {
+											# Remove 65% of basal area from below
+											below$expan = r/sum(below$bap) * below$expan # Reduce expansion factors by the cut ratio (r/B)
+										}
+										
+										# Take remaining basal area from above	
+										out = rbind(above,below) # Recombine above and below split
+										bap = sum(with(out,pi*(dbh/2)^2/144*(expan))) # Recalculate total basal area per acre (ft2/ac)
+										r = bap-target # Update cut factor, for the above trees
+										out$expan[out$dc>=divide] <- with(out[out$dc>=divide,],expan-r/sum(bap)*expan) # Remove remaining basal area from above
+									}
+									
+								} else {
+									
+									## Check for fatal errors, then proceed into routine
+									bap = with(out,sum(dbh^2*0.005454*expan)) # Calculate basal area per acre (ft2/ac)
+									qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate Dq (in)
+									rel = bap/(qmd)^0.5 # Calculate relative density, under Curtis' definition
+									fatal[metric!="rel"] <- 1 # Fatal error; Something other than RD specified
+									fatal[target>=rel] <-1 # Fatal error; Not enough RD left to meet target
+									
+									if(fatal==0){
+										r = 0.65*(rel-target) # Identify percent of RD to remove from below
+										below = out[out$dc<divide,] # Tree's from below the mode
+										above = out[out$dc>=divide,] # Tree's from above the mode
+										
+										# Take 65% of RD from below, if possible; evaluate initial conditions to determine feasibility
+										bap = sum(pi*(below$dbh/2)^2/144*(below$expan)) # Basal area per acre
+										qmd = sqrt(bap/(0.005454*sum(below$expan))) # Calculate quadratic mean diameter
+										rel = bap / (qmd)^0.5  # Relative density, as calculated by Curtis
+										
+										# If not possible to take 65% RD from below, zero out all trees from below
+										if(r>rel){
+											r=r-rel # Reduce r, the amount of relative density to remove
+											below$expan=0 # Complete zero out expansion factors if 
+										} else {
+											# If possible to take 65% of RD from below, do so iteratively until target reached
+											repeat{
+												below$expan=below$expan-0.001 # Remove expansion factors, until r reduced to zero
+												below$expan[below$expan<0] = 0 # No expansion factor may be below zero
+												bap = sum(pi*(below$dbh/2)^2/144*(below$expan)) # Basal area per acre
+												qmd = sqrt(bap/(0.005454*sum(below$expan))) # Calculate quadratic mean diameter
+												r = r - (rel-(bap/(qmd)^0.5)) # Reduce r, by the prior calculated RD (i.e. Find the RD removed)
+												if(all.equal(0,r,tolerance=0.01)==TRUE) {break} # Break when approximate removal target reached
+												rel = bap/(qmd)^0.5  # Calculate relative density, as calculated by Curtis
+											}
+										}
+										## Remove remaining RD from above
+										out = rbind(above,below) # Recombine above and below split
+										bap = with(out,sum(dbh^2*0.005454*expan)) # Calculate basal area per acre (ft2/ac)
+										qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate Dq (in)
+										rel = bap/(qmd)^0.5 # Calculate relative density, under Curtis' definition
+										repeat{
+											out$expan[out$dc>=divide]=out$expan[out$dc>=divide]-0.001
+											out$expan[out$expan<0] = 0 # No expansion factor may be below zero
+											bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
+											qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate quadratic mean diameter
+											rel = bap/(qmd)^0.5 # Relative density, as calculated by Curtis
+											if(all.equal(1,target/rel,tolerance=0.01)==TRUE) {break} # Break when approximate removal target reached
+										}	
+										
+									}
+								}
+								
+								out = out[order(out$index),] # Reorder by the index
+								out = subset(out,select=-c(index,dc,bap)) # Drop columns used to the thinning procedure
+								out$mgexp = out$mgexp-out$expan # Find the cut tree expansion factor; see the earlier procedures
+								
+							},
+							"user"={
+								out$expan[out$user==triggers$year] <- out$expan[out$user==triggers$year] * (1-target)
+								out$mgexp = out$mgexp-out$expan # Reduce to find cut tree expansion factor
+							}
+					)
+				}
+				
+				inform[[1]][1][fatal==0] <- 1 # Indicate thinning, given no fatal errors
+				inform[[2]] = out # Submit the thinned tree list
+			}
+			
+			## * Begin the Fertilization Algorithm * ##
+			if(any(act$what=="fert")) {
+				
+				## Extract user-supplied arguments to the fertilization algorithm
+				how = act$how[act$what=="fert"] # Method of thinning
+				metric = act$metric[act$what=="fert"] # Metric associated with the target condition
+				target = as.numeric(act$target[act$what=="fert"]) # Target condition in units of the metric
+				out = target # Send out pound of nitrogen applied 
+				
+				inform[[1]][2] <- 1 # Indicate fertilization, given no fatal errors
+				inform[[3]] = out # Submit the fertilization output 
+				
+			}	
+		}
+		
+		return(inform) # Return information to inform Organon, based on indicator keys
+	}
+		
 	# Identify directories used when running the program
 	home = getwd() # User workspace
 	root = path.package("cipsr") # Root directory for the cipsr package 

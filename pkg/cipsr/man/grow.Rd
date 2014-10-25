@@ -12,7 +12,7 @@ Returns a list of tree and stand information along with a list of found errors a
 }
 
 \usage{
-cipsr( InputList )
+grow( InputList )
 }
 		   
 \arguments{
