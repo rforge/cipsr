@@ -440,7 +440,6 @@ grow <- function( InputList ) {
 	
 	## If the user plans to run the statistical version of Organon with climate and soils, prepare rasters
 	if(any(units$driver==1)) {	
-		
 		## Now load soil and weather coverages
 		rasters <- new.env() # Set up a raster enviornment to call		
 		assign('whc50',raster(paste(spat,"whc50.img",sep="/")),envir=rasters) # Water holding capacity from 0 - 50 cm (%)
