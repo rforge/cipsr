@@ -2,97 +2,124 @@
 
 \alias{cipsrexam}
 
-\docType{data}
-
-\title{
-Example dataset for use in the cipsr function
-}
+\title{Example database to be used in the \code{grow} function}
 
 \description{
-This dataset contains examples of tree, stand and silvicultural activities
+In \code{cipsr}, forest data sets are stored as list objects, which are submitted as
+an argument to the \code{grow} function. These lists are comprised of three elements: 
+"samples", "units" and "activities".  The sample element contains measurements of 
+individual trees.  The units element contains instructions for how a given unit in 
+the sample list should be simulated by Organon or Cipsanon in the \code{grow} function.
+The activities element contains instructions for silvicultural treatments to be imposed 
+on a given unit. The object \code{cipsrexam} is an example dataset which could be 
+supplied to \code{grow}.  Users should follow the format of \code{cipsrexam} when
+preparing their databases. Alternatively, users may load an identically formatted 
+Excel (.xls) file using \code{load.data}.   
 }
 
-\usage{data(cipsrexam)}
+\usage{
+\code{grow(cipsrexam)} \cr
+}
 
 \format{
-  The format is:
-List of 3
- $ samples   :'data.frame':	63 obs. of  10 variables:
-  ..$ unit   : chr [1:63] "A" "A" "A" "A" ...
-  ..$ sample : num [1:63] 1 1 1 1 1 1 1 1 1 1 ...
-  ..$ tree   : num [1:63] 0 0 0 0 0 0 0 0 0 0 ...
-  ..$ expan  : num [1:63] 20 20 20 20 20 20 20 20 20 20 ...
-  ..$ user   : num [1:63] 29 29 29 39 39 39 0 0 0 0 ...
-  ..$ species: num [1:63] 202 202 202 202 202 202 202 202 202 202 ...
-  ..$ dbh    : num [1:63] 12.2 10 10.3 13.6 9 16 12.1 8.5 12.7 13.3 ...
-  ..$ tht    : num [1:63] 93 92 87 97 81 98 93 78 92 95 ...
-  ..$ cr     : num [1:63] 0.387 0.379 0.381 0.333 0.387 0.395 0.55 0.394 0.415 0.486 ...
-  ..$ radgro : num [1:63] 0 0 0 0 0 0 0 0 0 0 ...
- $ units     :'data.frame':	5 obs. of  40 variables:
-  ..$ unit     : chr [1:5] "A" "B" "2" "12" ...
-  ..$ latitude : num [1:5] 0 0 0 43 0
-  ..$ longitude: num [1:5] 0 0 0 -123 0
-  ..$ pptdd    : num [1:5] 0 0 0 0 0
-  ..$ whc      : num [1:5] 0 0 0 0 0
-  ..$ wantplot : num [1:5] 2 2 0 0 0
-  ..$ wanttable: num [1:5] 1 1 0 0 0
-  ..$ woodqual : num [1:5] 1 0 1 0 1
-  ..$ variant  : num [1:5] 1 2 1 2 1
-  ..$ version  : num [1:5] 3 2 1 1 1
-  ..$ driver   : num [1:5] 0 0 0 1 0
-  ..$ groyrs   : num [1:5] 50 50 50 50 50
-  ..$ iseven   : num [1:5] 1 1 1 1 1
-  ..$ partcut  : num [1:5] 0 0 0 0 0
-  ..$ pastfert : num [1:5] 0 0 0 0 0
-  ..$ stage    : num [1:5] 24 24 76 75 77
-  ..$ bhage    : num [1:5] 20 20 71 70 72
-  ..$ dfsi     : num [1:5] 125 125 78.8 0 97.5
-  ..$ otsi     : num [1:5] 0 0 0 83.1 0
-  ..$ dhcal    : num [1:5] 1 1 1 1 1
-  ..$ ccal     : num [1:5] 1 1 1 1 1
-  ..$ dgrocal  : num [1:5] 1 1 1 1 1
-  ..$ triple   : num [1:5] 0 0 0 0 0
-  ..$ maxsdi   : num [1:5] 1 1 1 1 1
-  ..$ dfsdi    : num [1:5] 0 0 0 0 0
-  ..$ wgsdi    : num [1:5] 0 0 0 0 0
-  ..$ phsdi    : num [1:5] 0 0 0 0 0
-  ..$ gdval    : num [1:5] 0 0 0 0 0
-  ..$ ghval    : num [1:5] 0 0 0 0 0
-  ..$ dfret    : num [1:5] 0 0 0 0 0
-  ..$ genes    : num [1:5] 0 0 0 0 0
-  ..$ snc      : num [1:5] 0 0 0 0 0
-  ..$ core     : num [1:5] 0 0 0 0 0
-  ..$ cftd     : num [1:5] 0 0 0 0 0
-  ..$ cfsh     : num [1:5] 0 0 0 0 0
-  ..$ logll    : num [1:5] 32 32 32 32 32
-  ..$ logml    : num [1:5] 8 8 8 8 8
-  ..$ logtd    : num [1:5] 6 6 6 6 6
-  ..$ logsh    : num [1:5] 0.5 0.5 0.5 0.5 0.5
-  ..$ logta    : num [1:5] 8 8 8 8 8
- $ activities:'data.frame':	8 obs. of  7 variables:
-  ..$ unit   : chr [1:8] "A" "A" "A" "B" ...
-  ..$ trigger: chr [1:8] "year" "year" "rel" "rel" ...
-  ..$ when   : num [1:8] 24 24 70 40 81 300 300 120
-  ..$ what   : chr [1:8] "thin" "fert" "thin" "thin" ...
-  ..$ how    : chr [1:8] "below" "N" "uniform" "uniform" ...
-  ..$ metric : chr [1:8] "rel" "pounds" "rel" "bap" ...
-  ..$ target : num [1:8] 30 200 50 100 0.8 100 150 50
+The example database consists of three list elements: "samples", "units" and "activities".
+Each list element is data frame consisting of many columns.  The variables each column
+represents are described below, but in much greater detail within the \code{cipsr} vignette. \cr
+\cr
+\bold{$samples} \cr
+\describe{
+	\item{unit}{identifier for the sampled stand (unit) of trees}
+	\item{sample}{identifier for the sample nested within a unit}
+	\item{tree}{identifier for tree in a sample and unit}
+	\item{expan}{identifier for tree in a sample and unit}
+	\item{user}{stand age to remove a given tree (year)}
+	\item{species}{tree species identification code}
+	\item{dbh}{diameter at breast height (inches)}
+	\item{tht}{total tree height (feet)}
+	\item{cr}{crown ratio}
+	\item{radgro}{five-year radial growth (in)}
+}
+\cr
+\cr
+\bold{$units} \cr
+\describe{
+	\item{unit}{identifier for the sampled stand (unit) of trees}
+	\item{latitude}{latitude (decimal degrees)}
+	\item{longitude}{longitude (decimal degrees)}
+	\item{pptdd}{precipitation for degree days greater than or equal to 41 degrees F; if left equal to zero, this value can be estimated by \code{cipsr}}
+	\item{whc}{water holding capacity of the top 20 inches of soil; if left equal to zero, this value can be estimated by \code{cipsr}}
+	\item{wantplot}{indicator to make a series of descriptive graphs}
+	\item{wanttable}{indicator to produce a table of results outside of R}
+	\item{woodqual}{indicator to estimate wood quality attributes of individual trees}
+	\item{variant}{model variant to use in the simulation}
+	\item{version}{version of a given model variant to use }
+	\item{driver}{if Cipsanon is in use, define how to drive site productivity}
+	\item{groyrs}{number of years to grow the unit}
+	\item{iseven}{indicator for if the unit is even-aged}
+	\item{partcut}{indicator that the unit has been partly harvested in the past}
+	\item{pastfert}{indicator that the unit has been partly fertilized in the past}
+	\item{stage}{total age of the unit (years); if uneven aged, this value must be zero}
+	\item{bhage}{breast height age of the unit (years)}
+	\item{dfsi}{Douglas-fir 50-year site index}
+	\item{otsi}{other species site-index}
+	\item{dhcal}{indicator for diameter and height calibration}
+	\item{ccal}{indicator for crown ratio calibration}
+	\item{dgrocal}{indicator for diameter growth calibration}
+	\item{triple}{indicator to use tripling in the simulation}
+	\item{maxsdi}{indicator for enforcing a maximum size-density limit}
+	\item{dfsdi}{Douglas-fir maximum size-density index}
+	\item{wgsdi}{White/Grand fir maximum size-density index}
+	\item{phsdi}{Ponderosa pine/Western hemlock maximum size density index}
+	\item{gdval}{Douglas-fir genetic worth value for diameter growth}
+	\item{ghval}{Douglas-fir genetic worth value for height growth}
+	\item{dfret}{needle retention of Douglas-fir infected by Swiss-needle cast}
+	\item{genes}{use genetic worth values for diameter and height growth}
+	\item{snc}{indicator for a unit inflected by Swiss-needle cast}
+	\item{core}{definition of the juvenile wood code}
+	\item{cftd}{top diameter inside for cubic foot volume estimation (inches)}
+	\item{cfsh}{stump height for cubic foot volume estimation (feet)}
+	\item{logll}{log length for Scribner volume estimation (feet)}
+	\item{logml}{minimum log length for Scribner volume estimation (feet)}
+	\item{logtd}{top diameter inside bark for Scribner volume estimation (inches)}
+	\item{logsh}{stump height for Scribner volume estimation (feet)}	
+	\item{logta}{trim allowance for Scribner volume estimation (inches)}	
+}
+\cr
+\cr
+\bold{$activities} \cr
+\describe{
+	\item{unit}{identifier for the sampled stand (unit) of trees}	
+	\item{trigger}{type of unit condition used to trigger a silvicultural activity}	
+	\item{when}{level of a unit condition to trigger a silvicultural activity}	
+	\item{what}{silvicultural activity to be carried out if a trigger is met}	
+	\item{how}{instructions for how a silvicultural activity should be carried out}	
+	\item{metric}{type of unit condition used to define the residual target of a silvicultural activity}	
+	\item{target}{level of residual condition desired from the silvicultural activity}	
+}
 }
 
-\details{
-}
+\author{Nathaniel Osborne \email{nathaniel.osborne@oregonstate.edu}}
 
-\source{
-Obtained from David Hann 
-}
-
-\references{
+\seealso{
+\code{\link{load.data}}
+\code{\link{grow}}
 }
 
 \examples{
-data(cipsrexam)
-str(cipsrexam) 
-names(cipsrexam)
+# Read more about formatting your data for use in cipsr
+vignette("cipsr")
+
+# Load the cipsr package 
+library(cipsr)
+
+# Explore the top few lines of the example database
+lapply(cipsrexam,function(x){head(x)})
+
+# Grow the example database; explore output 
+grown = grow(cipsrexam)
+lapply(grown,function(x){head(x)})
 }
 
-\keyword{datasets}
+\keyword{
+datasets
+}

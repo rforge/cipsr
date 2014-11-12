@@ -7,23 +7,6 @@
 ## Support: Nathaniel.Osborne@oregonstate.edu
 ##
 
-## Function to call when CIPS-R is loaded
-.OnAttach <- function(){
-	
-	# Introduction text and documentation
-	introtxt = "CIPS-R is an interface to Organon and Cipsanon developed at CIPS: Version 2.0"
-	packageStartupMessage(introtxt)
-	
-	# Load and mask cipsr example data (maybe not necessary)!
-	data("cipsrexam", package="cipsr")
-	
-	# Required packages indicated in Imports section of namespace (Silently)
-	invisible(suppressMessages(suppressWarnings(sapply(c("XLConnect","raster","rgdal"), require, character.only=T))))
-	
-}
-
-.OnAttach() # Run procedures after loading the program
-
 ## Function imports formatted Excel databases
 load.data <- function( InputFile ) {
 		
@@ -393,7 +376,7 @@ load.data <- function( InputFile ) {
 
 ## Function runs Organon and CIPSANON in R  
 grow <- function( InputList ) {
-
+	
 	# Identify directories used when running the program
 	home = getwd() # User workspace
 	root = path.package("cipsr") # Root directory for the cipsr package 
@@ -441,6 +424,7 @@ grow <- function( InputList ) {
 	## If the user plans to run the statistical version of Organon with climate and soils, prepare rasters
 	if(any(units$driver==1)) {	
 		## Now load soil and weather coverages
+		suppressMessages(library("rgdal")) # Pre-em 
 		rasters <- new.env() # Set up a raster enviornment to call		
 		assign('whc50',raster(paste(spat,"whc50.img",sep="/")),envir=rasters) # Water holding capacity from 0 - 50 cm (%)
 		assign('pptdd5',raster(paste(spat,"pptdd5.img",sep="/")),envir=rasters) # Growing season precipitation (mm)
