@@ -25,7 +25,7 @@ More detail about the \code{grow} function including input and output can be fou
 }
 
 \usage{
-\code{grow(InputList)}
+grow(InputList)
 }
 
 \arguments{

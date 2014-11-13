@@ -18,7 +18,7 @@ Excel (.xls) file using \code{load.data}.
 }
 
 \usage{
-\code{grow(cipsrexam)} \cr
+grow(cipsrexam)
 }
 
 \format{
