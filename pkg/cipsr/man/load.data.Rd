@@ -41,7 +41,7 @@ load.data(InputFile)
 
 \examples{
 # Ensure the Excel template is in the working directory
-list.files(getwd()) 
+#list.files(getwd()) 
 }
 
 \keyword{

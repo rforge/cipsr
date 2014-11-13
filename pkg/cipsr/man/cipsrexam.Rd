@@ -107,17 +107,17 @@ represents are described below, but in much greater detail within the \code{cips
 
 \examples{
 # Load the cipsr package 
-library(cipsr)
+#library(cipsr)
 
 # Read more about formatting your data for use in cipsr
-vignette("cipsr")
+#vignette("cipsr")
 
 # Explore the top few lines of the example database
-lapply(cipsrexam,function(x){head(x)})
+#lapply(cipsrexam,function(x){head(x)})
 
 # Grow the example database; explore output 
-grown = grow(cipsrexam)
-lapply(grown,function(x){head(x)})
+#grown = grow(cipsrexam)
+#lapply(grown,function(x){head(x)})
 }
 
 \keyword{

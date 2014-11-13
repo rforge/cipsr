@@ -43,11 +43,11 @@ More detail about the \code{grow} function including input and output can be fou
 
 \examples{
 # Load cipsr and make a prediction
-library(cipsr)
+#library(cipsr)
 
 # Grow the example dataset explore the output
-grown = grow(cipsrexam)
-lapply(grown,function(x){head(x)})
+#grown = grow(cipsrexam)
+#lapply(grown,function(x){head(x)})
 }
 
 \keyword{
