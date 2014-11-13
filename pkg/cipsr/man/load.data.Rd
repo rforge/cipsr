@@ -42,11 +42,6 @@ load.data(InputFile)
 \examples{
 # Ensure the Excel template is in the working directory
 list.files(getwd()) 
-
-# Load the Excel template and supply it to the grow function
-library(cipsr)
-mydata = load.data("CIPSREXAM.xls")
-grown = grow(mydata)
 }
 
 \keyword{

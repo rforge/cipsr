@@ -106,11 +106,11 @@ represents are described below, but in much greater detail within the \code{cips
 }
 
 \examples{
-# Read more about formatting your data for use in cipsr
-vignette("cipsr")
-
 # Load the cipsr package 
 library(cipsr)
+
+# Read more about formatting your data for use in cipsr
+vignette("cipsr")
 
 # Explore the top few lines of the example database
 lapply(cipsrexam,function(x){head(x)})
