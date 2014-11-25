@@ -32,13 +32,6 @@
 \baselineskip=15pt              % set line spacing to 1.5
 \clubpenalty=10000              % Suppress all club (orphan) lines
 
-\VignetteIndexEntry{cipsr} 
-\VignetteDepends{cipsr} 
-\VignetteKeyword{forest} 
-\VignetteKeyword{growth}
-\VignetteKeyword{yield}
-\VignetteKeyword{quality}
-
 \maketitle
 
 \abstract{
