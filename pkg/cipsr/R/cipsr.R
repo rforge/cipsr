@@ -555,7 +555,7 @@ grow <- function( InputList ) {
 				dyn.load(paste(dlls,"ORGWQ.dll",sep="/"),type="Fortran") # Load the Organon wood quality subroutine
 				glasslog = .Fortran("woodqual",as.integer(IJCALC),as.integer(IEVEN),as.integer(IFINAL),as.integer(ACTION),as.integer(BHAGE),as.integer(STAGE),as.integer(NINGRO),as.integer(NPTS),as.integer(NTREES),as.integer(NWQT), 
 						as.integer(VERSION),as.integer(SPECIES),as.single(SITE_1),as.single(SITE_2),as.single(PDEN),as.single(DBH),as.single(HT),as.single(CR),as.single(SCR),as.single(EXPAN),as.single(MGEXP), 
-						as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB) )
+						as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB)) 
 				dyn.unload(paste(dlls,"ORGWQ.dll",sep="/")) # Unload the wood quality DLL
 				
 				BRCNT = glasslog[[26]] # Branch count
@@ -618,7 +618,7 @@ grow <- function( InputList ) {
 						## Calculate wood quality attributes for thinned trees
 						glasslog = .Fortran("woodqual",as.integer(IJCALC),as.integer(IEVEN),as.integer(IFINAL),as.integer(ACTION),as.integer(BHAGE),as.integer(STAGE),as.integer(NINGRO),as.integer(NPTS),as.integer(NTREES),as.integer(NWQT), 
 								as.integer(VERSION),as.integer(SPECIES),as.single(SITE_1),as.single(SITE_2),as.single(PDEN),as.single(DBH),as.single(HT),as.single(CR),as.single(SCR),as.single(EXPAN),as.single(MGEXP), 
-								as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB) )
+								as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB)) 
 						dyn.unload(paste(dlls,"ORGWQ.dll",sep="/")) # Unload the Organon wood quality subroutine
 						
 						## Update relevant wood quality vectors
@@ -653,7 +653,7 @@ grow <- function( InputList ) {
 						as.single(BART), as.single(YST), as.integer(NPR),as.integer(PRAGE), as.single(PRLH), as.single(PRDBH), as.single(PRHT), as.single(PRCR), 
 						as.single(PREXP), as.integer(BRCNT), as.integer(BRHT),as.integer(BRDIA), as.integer(JCORE), as.integer(SERROR), as.integer(TERROR), 
 						as.integer(SWARNING), as.integer(TWARNING), as.integer(IERROR),as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG), 
-						as.single(MORTEXP), as.integer(NTREES2), as.single(DBH2), as.single(HT2),as.single(CR2), as.single(SCR2), as.single(EXPAN2), as.single(STOR)) 
+						as.single(MORTEXP), as.integer(NTREES2), as.single(DBH2), as.single(HT2),as.single(CR2), as.single(SCR2), as.single(EXPAN2),as.single(STOR)) 
 				dyn.unload(paste(dlls,"CIPSRUN.dll",sep="/")) # Unload the execute subroutine 
 				
 				## Update the values for the grown sample
@@ -701,7 +701,7 @@ grow <- function( InputList ) {
 					## Call the wood quality subroutine in ORGWQ.dll to estimate wood quality
 					glasslog = .Fortran("woodqual",as.integer(IJCALC),as.integer(IEVEN),as.integer(IFINAL),as.integer(ACTION),as.integer(BHAGE),as.integer(STAGE),as.integer(NINGRO),as.integer(NPTS),as.integer(NTREES),as.integer(NWQT), 
 							as.integer(VERSION),as.integer(SPECIES),as.single(SITE_1),as.single(SITE_2),as.single(PDEN),as.single(DBH),as.single(HT),as.single(CR),as.single(SCR),as.single(EXPAN),as.single(MGEXP), 
-							as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB) )
+							as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB)) 
 					dyn.unload(paste(dlls,"ORGWQ.dll",sep="/")) # Unload the Organon wood quality subroutine
 					
 					BRCNT = glasslog[[26]] # Branch count
@@ -751,7 +751,7 @@ grow <- function( InputList ) {
 				dyn.load(paste(dlls,"ORGWQ.dll",sep="/"),type="Fortran") # Load the wood quality DLL
 				glasslog = .Fortran("woodqual",as.integer(IJCALC),as.integer(IEVEN),as.integer(IFINAL),as.integer(ACTION),as.integer(BHAGE),as.integer(STAGE),as.integer(NINGRO),as.integer(NPTS),as.integer(NTREES),as.integer(NWQT), 
 						as.integer(VERSION),as.integer(SPECIES),as.single(SITE_1),as.single(SITE_2),as.single(PDEN),as.single(DBH),as.single(HT),as.single(CR),as.single(SCR),as.single(EXPAN),as.single(MGEXP), 
-						as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB) )
+						as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB)) 
 				dyn.unload(paste(dlls,"ORGWQ.dll",sep="/")) # Unload the wood quality subroutine
 				
 				BRCNT = glasslog[[26]] # Branch count
@@ -801,7 +801,7 @@ grow <- function( InputList ) {
 				CR[1:NTREES] <- executed$cr # Crown ratio 
 				volume = .Fortran("volcal",as.integer(VERSION),as.integer(NTREES),as.integer(SPECIES),as.single(CFTD),as.single(CFSH),as.single(LOGLL),as.single(LOGML),as.single(LOGTD), 
 						as.single(LOGSH),as.single(LOGTA),as.single(DBH),as.single(HT),as.single(CR),as.integer(VERROR),as.integer(TERROR),as.integer(VWARNING), 
-						as.integer(TWARNING),as.integer(IERROR),as.single(CFVOL),as.single(BFVOL))
+						as.integer(TWARNING),as.integer(IERROR),as.single(CFVOL),as.single(BFVOL)) 
 				executed$cfv = volume[[19]][1:NTREES] # Input the cubic foot volume for each tree
 				executed$bfv = volume[[20]][1:NTREES] # Input the board foot volume for each tree
 				
@@ -817,7 +817,7 @@ grow <- function( InputList ) {
 							CR[1:NTREES] <- df$cr # Crown ratio 
 							volume = .Fortran("volcal",as.integer(VERSION),as.integer(NTREES),as.integer(SPECIES),as.single(CFTD),as.single(CFSH),as.single(LOGLL),as.single(LOGML),as.single(LOGTD), 
 									as.single(LOGSH),as.single(LOGTA),as.single(DBH),as.single(HT),as.single(CR),as.integer(VERROR),as.integer(TERROR),as.integer(VWARNING), 
-									as.integer(TWARNING),as.integer(IERROR),as.single(CFVOL),as.single(BFVOL))
+									as.integer(TWARNING),as.integer(IERROR),as.single(CFVOL),as.single(BFVOL)) 
 							df$cfv = volume[[19]][1:NTREES] # Input the cubic foot volume for each tree
 							df$bfv = volume[[20]][1:NTREES] # Input the board foot volume for each tree
 							df # Return the processed (cut section) data frame
@@ -950,7 +950,7 @@ grow <- function( InputList ) {
 				dyn.load(paste(dlls,"ORGWQ.dll",sep="/"),type="Fortran") # Load the Organon wood quality subroutine
 				glasslog = .Fortran("woodqual",as.integer(IJCALC),as.integer(IEVEN),as.integer(IFINAL),as.integer(ACTION),as.integer(BHAGE),as.integer(STAGE),as.integer(NINGRO),as.integer(NPTS),as.integer(NTREES),as.integer(NWQT), 
 						as.integer(VERSION),as.integer(SPECIES),as.single(SITE_1),as.single(SITE_2),as.single(PDEN),as.single(DBH),as.single(HT),as.single(CR),as.single(SCR),as.single(EXPAN),as.single(MGEXP), 
-						as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB) )
+						as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB)) 
 				dyn.unload(paste(dlls,"ORGWQ.dll",sep="/")) # Unload the Organon wood quality subroutine
 				
 				BRCNT = glasslog[[26]] # Branch count
@@ -1013,7 +1013,7 @@ grow <- function( InputList ) {
 						## Calculate wood quality attributes for thinned trees
 						glasslog = .Fortran("woodqual",as.integer(IJCALC),as.integer(IEVEN),as.integer(IFINAL),as.integer(ACTION),as.integer(BHAGE),as.integer(STAGE),as.integer(NINGRO),as.integer(NPTS),as.integer(NTREES),as.integer(NWQT), 
 								as.integer(VERSION),as.integer(SPECIES),as.single(SITE_1),as.single(SITE_2),as.single(PDEN),as.single(DBH),as.single(HT),as.single(CR),as.single(SCR),as.single(EXPAN),as.single(MGEXP), 
-								as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB) )
+								as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB)) 
 						dyn.unload(paste(dlls,"ORGWQ.dll",sep="/")) # Unload the Organon wood quality subroutine
 						
 						## Update relevant wood quality vectors
@@ -1047,7 +1047,7 @@ grow <- function( InputList ) {
 						as.single(BART), as.single(YST), as.integer(NPR),as.integer(PRAGE), as.single(PRLH), as.single(PRDBH), as.single(PRHT), as.single(PRCR), 
 						as.single(PREXP), as.integer(BRCNT), as.integer(BRHT),as.integer(BRDIA), as.integer(JCORE), as.integer(SERROR), as.integer(TERROR), 
 						as.integer(SWARNING), as.integer(TWARNING), as.integer(IERROR),as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG), 
-						as.single(MORTEXP), as.integer(NTREES2), as.single(DBH2), as.single(HT2),as.single(CR2), as.single(SCR2), as.single(EXPAN2), as.single(STOR)) 
+						as.single(MORTEXP), as.integer(NTREES2), as.single(DBH2), as.single(HT2),as.single(CR2), as.single(SCR2), as.single(EXPAN2),as.single(STOR)) 
 				dyn.unload(paste(dlls,"ORGRUN.dll",sep="/")) # Unload the execute subroutine 
 				
 				## Update the values for the grown sample
@@ -1095,7 +1095,7 @@ grow <- function( InputList ) {
 					## Call the wood quality subroutine in ORGWQ.dll to estimate wood quality
 					glasslog = .Fortran("woodqual",as.integer(IJCALC),as.integer(IEVEN),as.integer(IFINAL),as.integer(ACTION),as.integer(BHAGE),as.integer(STAGE),as.integer(NINGRO),as.integer(NPTS),as.integer(NTREES),as.integer(NWQT), 
 							as.integer(VERSION),as.integer(SPECIES),as.single(SITE_1),as.single(SITE_2),as.single(PDEN),as.single(DBH),as.single(HT),as.single(CR),as.single(SCR),as.single(EXPAN),as.single(MGEXP), 
-							as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB) )
+							as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB)) 
 					dyn.unload(paste(dlls,"ORGWQ.dll",sep="/")) # Unload the Organon wood quality subroutine
 					
 					BRCNT = glasslog[[26]] # Branch count
@@ -1144,7 +1144,7 @@ grow <- function( InputList ) {
 				dyn.load(paste(dlls,"ORGWQ.dll",sep="/"),type=Fortran) # Load the wood quality DLL
 				glasslog = .Fortran("woodqual",as.integer(IJCALC),as.integer(IEVEN),as.integer(IFINAL),as.integer(ACTION),as.integer(BHAGE),as.integer(STAGE),as.integer(NINGRO),as.integer(NPTS),as.integer(NTREES),as.integer(NWQT), 
 						as.integer(VERSION),as.integer(SPECIES),as.single(SITE_1),as.single(SITE_2),as.single(PDEN),as.single(DBH),as.single(HT),as.single(CR),as.single(SCR),as.single(EXPAN),as.single(MGEXP), 
-						as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB) )
+						as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB)) 
 				dyn.unload(paste(dlls,"ORGWQ.dll",sep="/")) # Unload the wood quality subroutine
 				
 				BRCNT = glasslog[[26]] # Branch count
@@ -1195,7 +1195,7 @@ grow <- function( InputList ) {
 				CR[1:NTREES] <- executed$cr # Crown ratio 
 				volume = .Fortran("volcal",as.integer(VERSION),as.integer(NTREES),as.integer(SPECIES),as.single(CFTD),as.single(CFSH),as.single(LOGLL),as.single(LOGML),as.single(LOGTD), 
 						as.single(LOGSH),as.single(LOGTA),as.single(DBH),as.single(HT),as.single(CR),as.integer(VERROR),as.integer(TERROR),as.integer(VWARNING), 
-						as.integer(TWARNING),as.integer(IERROR),as.single(CFVOL),as.single(BFVOL))
+						as.integer(TWARNING),as.integer(IERROR),as.single(CFVOL),as.single(BFVOL)) 
 				executed$cfv = volume[[19]][1:NTREES] # Input the cubic foot volume for each tree
 				executed$bfv = volume[[20]][1:NTREES] # Input the board foot volume for each tree
 				
@@ -1211,7 +1211,7 @@ grow <- function( InputList ) {
 							CR[1:NTREES] <- df$cr # Crown ratio 
 							volume = .Fortran("volcal",as.integer(VERSION),as.integer(NTREES),as.integer(SPECIES),as.single(CFTD),as.single(CFSH),as.single(LOGLL),as.single(LOGML),as.single(LOGTD), 
 									as.single(LOGSH),as.single(LOGTA),as.single(DBH),as.single(HT),as.single(CR),as.integer(VERROR),as.integer(TERROR),as.integer(VWARNING), 
-									as.integer(TWARNING),as.integer(IERROR),as.single(CFVOL),as.single(BFVOL))
+									as.integer(TWARNING),as.integer(IERROR),as.single(CFVOL),as.single(BFVOL)) 
 							df$cfv = volume[[19]][1:NTREES] # Input the cubic foot volume for each tree
 							df$bfv = volume[[20]][1:NTREES] # Input the board foot volume for each tree
 							df # Return the processed (cut section) data frame
