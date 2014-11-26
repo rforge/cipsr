@@ -20,12 +20,11 @@ The output from \code{grow} is a list object comprised of five data frames: \cr
 \emph{standflags} \tab unit level model warnings and errors \cr
 \emph{treeflags} \tab tree level model warnings and errors \cr
 }
-\cr
 More detail about the \code{grow} function including input and output can be found in the cipsr vingette (i.e. \code{vingette("cipsr")}. 
 }
 
 \usage{
-grow(InputList)
+grow(...)
 }
 
 \arguments{
@@ -39,15 +38,6 @@ grow(InputList)
 \seealso{
 \code{\link{cipsrexam}}
 \code{\link{load.data}}
-}
-
-\examples{
-# Load cipsr and make a prediction
-#library(cipsr)
-
-# Grow the example dataset explore the output
-#grown = grow(cipsrexam)
-#lapply(grown,function(x){head(x)})
 }
 
 \keyword{

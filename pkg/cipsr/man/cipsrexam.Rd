@@ -18,14 +18,13 @@ Excel (.xls) file using \code{load.data}.
 }
 
 \usage{
-grow(cipsrexam)
+grow(...)
 }
 
 \format{
 The example database consists of three list elements: "samples", "units" and "activities".
 Each list element is data frame consisting of many columns.  The variables each column
 represents are described below, but in much greater detail within the \code{cipsr} vignette. \cr
-\cr
 \bold{$samples} \cr
 \describe{
 	\item{unit}{identifier for the sampled stand (unit) of trees}
@@ -39,8 +38,6 @@ represents are described below, but in much greater detail within the \code{cips
 	\item{cr}{crown ratio}
 	\item{radgro}{five-year radial growth (in)}
 }
-\cr
-\cr
 \bold{$units} \cr
 \describe{
 	\item{unit}{identifier for the sampled stand (unit) of trees}
@@ -84,8 +81,6 @@ represents are described below, but in much greater detail within the \code{cips
 	\item{logsh}{stump height for Scribner volume estimation (feet)}	
 	\item{logta}{trim allowance for Scribner volume estimation (inches)}	
 }
-\cr
-\cr
 \bold{$activities} \cr
 \describe{
 	\item{unit}{identifier for the sampled stand (unit) of trees}	
@@ -103,21 +98,6 @@ represents are described below, but in much greater detail within the \code{cips
 \seealso{
 \code{\link{load.data}}
 \code{\link{grow}}
-}
-
-\examples{
-# Load the cipsr package 
-#library(cipsr)
-
-# Read more about formatting your data for use in cipsr
-#vignette("cipsr")
-
-# Explore the top few lines of the example database
-#lapply(cipsrexam,function(x){head(x)})
-
-# Grow the example database; explore output 
-#grown = grow(cipsrexam)
-#lapply(grown,function(x){head(x)})
 }
 
 \keyword{

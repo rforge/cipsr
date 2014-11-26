@@ -23,7 +23,7 @@ command, \code{path.package("cipsr")}.
 }
 
 \usage{
-load.data(InputFile)
+load.data(...)
 }
 		   
 \arguments{
@@ -37,11 +37,6 @@ load.data(InputFile)
 \seealso{
 	\code{\link{cipsrexam}}
 	\code{\link{grow}}
-}
-
-\examples{
-# Ensure the Excel template is in the working directory
-#list.files(getwd()) 
 }
 
 \keyword{
