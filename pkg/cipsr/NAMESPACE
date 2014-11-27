@@ -1,4 +1,4 @@
-export(load.data,grow)
+export(load.data,get.template,grow)
 importFrom(XLConnect,readWorksheetFromFile)
 importFrom(XLConnect,writeWorksheetToFile)
 importFrom(raster,raster)

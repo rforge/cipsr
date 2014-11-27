@@ -20,7 +20,7 @@ Description: CIPS-R was developed by Nathaniel Osborne, Doug Maguire and David
     cannot be distributed publicly. The use of CIPS-R is limited to members of
     the CIPS cooperative.
 License: GPL (>=2)
-Depends: R (>= 2.15.0)
+Depends: R (>= 3.0.0)
 LazyData: true
 Imports: raster, XLConnect
 Suggests: rgdal, sp
