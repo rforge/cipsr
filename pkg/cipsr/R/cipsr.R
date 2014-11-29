@@ -1,47 +1,49 @@
-##
-## CIPS-R Source Code
-## A program that runs Center for Intensive Planted for Silviculture (CIPS) Tools in R
-## Developed by the Center for Intensive Planted-Forest Silviculture (CIPS)
-## Version 2.0.0 Last edit: 11/10/2014
-## Author: Nathaniel L. Osborne, Ph.D. Student 
-## Support: Nathaniel.Osborne@oregonstate.edu
-##
+## R source code for cipsr
+## For more information see vignette and description file
 
-## Function imports formatted Excel databases
-load.data <- function( InputFile ) {
+## Function: Imports formatted Excel databases using XLConnect
+load.data <- function(InputFile) {
 		
-	## Ensure that the user-specified database exists in the working directory
-	if(!file.exists(InputFile)) {return(winDialog("ok","Input Database Does Not Exist."))}
+	# User-specified database exists in the working directory?
+	if(!file.exists(InputFile)) {
+		return(winDialog("ok","Input database not found."))
+	}
 	
-	## Ensure that the user-specified database is in the correct file format
-	if(!grepl(".xls",InputFile)) {return(winDialog("ok","Reformat Database to a .xls Extension"))}
+	# Database is in the correct file format?
+	if(!grepl(".xls",InputFile)) {
+		return(winDialog("ok","Input database not in proper format (.xls)."))
+	}
 	
-	## Load the database provided XLConnect is loaded, the database exists and it is formatted correctly 
-	InputList = list(samples=readWorksheetFromFile(InputFile, sheet="samples"),
-			units=readWorksheetFromFile(InputFile, sheet="units"),
-			activities=readWorksheetFromFile(InputFile, sheet="activities"))
+	# Load the input database using XLConnect
+	InputList = sapply(c("samples","units","activities"),function(i){
+				out = readWorksheetFromFile(InputFile,sheet=i)
+			}
+	)
 	
-	## Ensure that the user formatted all tabs correctly; if not the InputList will not exist
-	if(!exists("InputList")) {return(winDialog("ok","Database Tabs Are Not Named Correctly."))}
+	# Check if the database was successfully loaded
+	if(!exists("InputList")) {
+		return(winDialog("ok","Something went wrong loading your data."))
+	} 
 	
-	return( InputList ) # Return the loaded inputlist
+	return(InputList) # Return the loaded dataset.
+	
 }
 
-## Get the Excel and copy it into the users working directory
+## Function: Gets the Excel template and copies it into the users working directory
 get.template <- function(){
 	home = getwd() # Location of the users working directory
 	exam = paste(path.package("cipsr"),"excel","CIPSREXAM.xls",sep="/") # Location of example dataset template
 	invisible(file.copy(exam, home)) # Copy the example dataset into a users working directory
 }
 
-## Function runs Organon and CIPSANON in R  
+## Function: Runs Organon and Cipsanon models in R  
 grow <- function( InputList ) {
 	
 	# Identify directories used when running the program
 	home = getwd() # User workspace
 	root = path.package("cipsr") # Root directory for the cipsr package 
 	
-	# Load DLL folder location, given the OS R architecture
+	# Load DLL folder location, given the Windows OS R architecture
 	switch(R.Version()$arch,
 			"i386"={
 				dlls=paste(root,"libs","i386",sep="/")
@@ -50,71 +52,100 @@ grow <- function( InputList ) {
 				dlls=paste(root,"libs","64x",sep="/")
 			}
 	)
+	
 	# Only permit i386 and 64x architecture to be used 
 	if(!R.Version()$arch %in% c("i386","x86_64")) return(winDialog("ok","Only R i386 and 64x is Supported")) 
 		
-	spat = paste(root,"spat",sep="/") # Location of geospatial files
-	warn = paste(root,"warn",sep="/") # Location of error message files
+	spat = paste(root,"spat",sep="/") # Geospatial files
+	warn = paste(root,"warn",sep="/") # Error message files
 		
-	## Ensure that the input list contains the correct set of tables
-	if(!all(c("samples","units","activities") %in% names(InputList))) { return(winDialog("ok","Input List Is Not Correctly Formatted"))} 
-	## To avoid importing null values, limit input tables to complete entries
-	samples = InputList$samples[complete.cases(InputList$samples),]
-	units = InputList$units[complete.cases(InputList$units),]
-	activities = InputList$activities[complete.cases(InputList$activities),]
+	# Ensure that the input list contains the correct set of tables (i.e. if user loads data without load.data function)
+	if(!all(c("samples","units","activities") %in% names(InputList))) { 
+		return(winDialog("ok","Input list is not named properly."))
+	} 
 	
-	## Ensure that user supplied unit index values match across tables; otherwise stop
-	index = list(samples$unit,units$unit,activities$unit)
+	# Extract and clean data from the input list
+	invisible(lapply(c("samples","units","activities"),function(x) {
+					out = with(InputList,get(x)) # Get a sheet from the input dataset
+					InputList[[which(names(InputList)==x)]] <<- NULL # Delete information from list
+					out = out[complete.cases(out),] # Ensure the list is complete across all rows
+					assign(x,out,envir=parent.env(environment())) # Assign the individual list component in the working directory
+				}
+		)
+	)
+
+	# Test for fatal errors which would cause cipsr to crash: inform user of issue and exit grow function
+	
+	# Ensure that the unit index values match across tables 
+	index = list(samples$unit,units$unit,activities$unit) # A list of all the provided unit identifiers	
 	if(length(index[[3]])==0) {index[[3]] <- NULL}	# Omit activities from the check if none are supplied
-	nomatch = NA  # In a combinatorial way, check all table indices match up and record results as true or false	
-	for(j in 1:length(index)) {nomatch[j]=!all(sapply(1:2, function(x) index[[j]] %in% index[[x]]))}
-	if(any(nomatch)) {return(winDialog("ok","At Least One Sample and Unit Index Combination Does Not Match Between the Input Tables"))}
+	# In a combinatorial way, check all table indices match up and record results logically
+	fatal = sapply(1:length(index),function(j){
+				out = !all(sapply(1:2, function(x) index[[j]] %in% index[[x]]))
+				return(out)
+			}
+	)
 	
-	rm(InputList,index,nomatch,j); invisible(gc()) # Clear out duplicate objects and flush out memory
+	# Inform user if unit and sample cominations in input dataset fail to match
+	if(any(fatal)) {
+		return(winDialog("ok","At least one unit and sample combination does not match across the input dataset."))
+	}
+	rm(index, fatal) # Clean up from the above process
 	
-	## Ensure that the user did not supply data with obvious errors that will cause fatal CIPS-R to crash
-	if(any(units$variant==2 & units$woodqual==1)) {return(winDialog("ok","Currently, Cipsanon Does Not Support Simulation of Wood Quality, But It Will Very Soon!"))}  
-	if(any(subset(samples,select=-c(unit,sample,tree))  < 0)) {return(winDialog("ok","At Least One Negative Measurement Value Exists"))}
-	if(any(units$variant==2 & units$version==2 & units$driver==1)) {return(winDialog("ok","SMC Version of CIPSANON Does Not Support a Mechanistic Site Index In This Version of ONR"))}
-	if(any(units$variant==2 & units$version==3)) {return(winDialog("ok","CIPSANON Only Supports Versions One and Two"))}  
-	if(any(units$variant==2 & units$version==2 & units$driver==1)) {return(winDialog("ok","CIPSANON Supports a Mechanistic Site Index Only for Version One"))}
-	if(any(units$variant==2 & units$dfsi==0 & units$otsi==0 & units$woodqual==1)) {return(winDialog("ok","Wood Quality Estimation Only Possible When Traditional Site Index Estimates Are Supplied"))}
-	if(any(units$groyrs==0)){return(winDialog("ok","At Least One Unit Has Grow Years Set To Zero"))}
+	# Continue checks for many common mistakes in the input dataset
+	if(any(units$model==2 & units$woodqual==1)) {
+		return(winDialog("ok","Cipsanon does not support wood quality estimation at this time."))
+	}  
 	
-	## If the user plans to run the statistical version of Organon with climate and soils, prepare rasters
+	if(any(subset(samples,select=-c(unit,sample,tree))<0)) {
+		return(winDialog("ok","At least one negative value exists in the samples part of your database."))
+	}
+		
+	if(any(units$model==2 & units$variant==2 & units$driver==1)) {
+		return(winDialog("ok","The SMC variant of Cipasnon does not support a mechanistic site index option."))
+	}
+	
+	if(any(units$model==2 & units$variant==1)) {
+		return(winDialog("ok","Cipsanon only supports SWO and SMC variants."))
+	}  
+	
+	if(any(units$groyrs==0)){
+		return(winDialog("ok","Units must have a groyrs value greater than zero."))
+	}
+		
+	# Load spatial files if the will be used in any simulation 
 	if(any(units$driver==1)) {	
-		## Now load soil and weather coverages
-		suppressMessages(library("rgdal")) # Pre-em 
-		rasters <- new.env() # Set up a raster enviornment to call		
-		assign('whc50',raster(paste(spat,"whc50.img",sep="/")),envir=rasters) # Water holding capacity from 0 - 50 cm (%)
-		assign('pptdd5',raster(paste(spat,"pptdd5.img",sep="/")),envir=rasters) # Growing season precipitation (mm)
+		rasters <- new.env() # Set up a raster enviornment to call files from		
+		# Load whc and pptdd raster files into cipsr
+		assign('whc50',raster(paste(spat,"whc50.img",sep="/")),envir=rasters) 
+		assign('pptdd5',raster(paste(spat,"pptdd5.img",sep="/")),envir=rasters) 
 	}
 	
 	## Create and initialize a progress bar to track processing of samples
 	T = length(unique(units$unit)) + 1 # The total number of orders to tick by
-	pbar <- winProgressBar(title="CIPS-R Progress: 0%",min=0,max=T,width=300) 
+	pbar <- winProgressBar(title="cipsr Progress: 0%",min=0,max=T,width=300) 
 	
-	## Function contains the thinning and fertilization algorithms for Organon & Cipsanon
+	## Function: Contains the thinning and fertilization algorithms for Organon & Cipsanon
 	.treatment <- function(executed,activity,triggers) {
 		
-		indicators = rep(0,2) # Treatment indicators [1] thinning, [2] fertilization; keys to what CIPSR should update
-		inform = list(indicators,NA,NA) # Initilize a list to reinform Organon with
-		if(nrow(activity)==0) return(inform) # If no activities are specified for the sample, return blank list
+		indicators = rep(0,2) # Treatment indictors for cipsr grow function: (1) for thinning, (2) for fertilization
+		inform = list(indicators,NA,NA) # Initilize a list for informating cipsr
+		if(nrow(activity)==0) return(inform) # If no activities are specified for the sample return a blank inform list
 		
-		## Evalulate if any activities should be triggered for the subperiod (1) using subperiod (0) information
+		# Evalulate if any activities should be triggered for the subperiod (1) using subperiod (0) information
 		trigger = matrix(ncol=6,nrow=nrow(activity),dimnames=list(1:nrow(activity),names(triggers)))
 		trigger[,2:6] = sapply(subset(names(triggers),names(triggers)!="year"),function(x){activity$trigger==x & triggers[[x]]>=activity$when}) # Evaluate greater than equal to statements
 		trigger[,1] = triggers$year==activity$when
 		
-		## Check for input that may generate fatal situations
-		fatal = 0 # Initialize to zero
-		fatal[length(unique(executed$stage[executed$subperiod==1]))==5] <- 1 # Cannot handle more than five thinnings
-		fatal[triggers$tpa<=50] <- 1 # Do not allow thinnings, where trees per acre below or at 50 TPA
+		# Check for input that may generate fatal situations
+		fatal = 0 # Initialize fatal errors to zero
+		fatal[length(unique(executed$stage[executed$subperiod==1]))==5] <- 1 # Do not allow more than five thinnings 
+		fatal[triggers$tpa<=50] <- 1 # Do not allow thinnings when stand TPA is less than 50/ac
 		
-		## If any triggering conditions were met, apply the user-specified treatment for subperiod (1)
+		# If any triggering conditions were met, apply the user-specified treatment for subperiod (1)
 		if(any(trigger) & fatal==0) {
 			
-			## Extract the orders to act upon from the triggers
+			# Extract the orders to act upon from the triggers
 			act = lapply(names(triggers), function(x) {
 						if(x=="year") {
 							activity[activity$trigger==x & triggers[[x]]==activity$when,]
@@ -128,7 +159,7 @@ grow <- function( InputList ) {
 			act = rbind(act[which(act$what=="thin"),][1,],act[which(act$what=="fert"),][1,]) # In the case of multiple orders, take just the first order  
 			act = act[complete.cases(act),] # Prohibit consideration of incomplete cases
 			
-			## * Begin the Thinning Algorithm * ##
+			# Thinning treatment algorithms are as follows:
 			if(any(act$what=="thin")) {
 				
 				## Reduce the executed treelist to only the most recent iteration and begin building the output object
@@ -163,14 +194,15 @@ grow <- function( InputList ) {
 				fatal[how=="user" & !triggers$year %in% out$user] <- 1 # User thinning without the year indicator specified
 				if(fatal==1) winDialog("ok",paste("Infeasible Thinning:","Unit",unique(activity$unit))) # Report a fatal error if it occurs
 				
-				# Provided no fatal errors, procede into the thinning algorithms
+				# Provided no fatal errors, procede to the thinning algorithms
 				if(fatal==0){
+					
 					## Switch through a series of methods for thinning and apply the relevant approach
 					switch(how,
-							# Uniform thinning; all trees treated equal
+							# Uniform thinning: all trees treated equal
 							"uniform"={
 								
-								## If simple metrics supplied, calculate using a ratio
+								# If simple metrics supplied, calculate using a ratio
 								if(metric%in%c("prop","tpa","bap")){
 									r = 0 # Amount to remove, initialized to zero
 									r[metric=="prop"] <- target 
@@ -181,8 +213,8 @@ grow <- function( InputList ) {
 									
 								} else {
 									
-									## If more complex metrics supplies, calculate with iterative reduction approach
-									
+									# If more complex metrics supplies, calculate with iterative reduction approach
+										
 									## If stand density metric supplied, iteratively reduce until the correct target reached
 									if(metric=="sdi"){
 										bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
@@ -197,7 +229,7 @@ grow <- function( InputList ) {
 											if(all.equal(0,target-sdi,tolerance=0.1)==TRUE | sdi<target){break}  # Break when within three decimals of precise relative density
 										}
 									}
-									
+										
 									## If relative density metric supplied, iteratively reduce until the correct target reached
 									if(metric=="rel"){
 										bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
@@ -215,13 +247,14 @@ grow <- function( InputList ) {
 									}
 								}	
 							},
+							# Below thinning: trees removed from small DBH to large DBH
 							"below"={
-								## Sort tree list, provide index for assurances
+								# Sort tree list, provide index for assurances
 								out$index = 1:nrow(out) # Assign an index for 'assured' order
 								out$ba = pi*(out$dbh/2)^2/144*out$expan # Calculate basal area per acre for each tree
 								out = out[order(out$ba),] # Sort the tree list by diameter breast height (in) 		
 								
-								## If simple metrics supplied, calculate using a ratio
+								# If simple metrics supplied, calculate using a ratio
 								if(metric%in%c("prop","tpa","bap")){
 									r = 0 # Amount to remove, initialized to zero
 									r[metric=="prop"] <- target * triggers$bap # Basal area to remove
@@ -229,7 +262,7 @@ grow <- function( InputList ) {
 									r[metric=="tpa"] <- triggers$tpa-target # Trees to remove   
 									p = NA # The proportion of the expansion factor to remove as r goes to zero 
 									
-									## Application of thinning for basal area per acre and proportional targets
+									# Application of thinning for basal area per acre and proportional targets
 									if(metric=="bap" | metric=="prop") {     
 										for(j in 1:nrow(out)) {
 											p[r>=out$ba[j]] <- 1
@@ -240,7 +273,7 @@ grow <- function( InputList ) {
 										}
 									}
 									
-									## Application of thinning for tree per acre, stand and relative density targets
+									# Application of thinning for tree per acre, stand and relative density targets
 									if(metric=="tpa") {
 										for(j in 1:nrow(out)) {
 											p[r>=out$expan[j]] <- 1
@@ -253,12 +286,12 @@ grow <- function( InputList ) {
 									
 								} else {
 									
-									## If more complex metrics supplies, calculate with iterative reduction approach
+									# If more complex metrics supplies, calculate with iterative reduction approach
 									if(metric%in%c("sdi","rel")){
 										
-										## If stand density metric supplied, reduce iteratively until target met
+										# If stand density metric supplied, reduce iteratively until target met
 										if(metric=="sdi"){
-											## Go in reverse order through the treelist, calculating RD to identify point at which removal must be specific
+											# Go in reverse order through the treelist, calculating RD to identify point at which removal must be specific
 											for(i in which(out$expan>0)){
 												bap = sum(pi*(out$dbh[1:i]/2)^2/144*out$expan[1:i]) # Basal area per acre
 												qmd = sqrt(bap/(0.005454*sum(out$expan[1:i]))) # Calculate quadratic mean diameter
@@ -268,7 +301,7 @@ grow <- function( InputList ) {
 											}
 											if(i>1){out$expan[1:(i-1)] <- 0} # Trees below k+1 point removed completed if k > 1	
 											
-											## Remove expansion factor until target reached
+											# Remove expansion factor until target reached
 											repeat{
 												out$expan[i]=out$expan[i]-0.001 # Remove expansion factor 
 												out$expan[out$expan<0] = 0 # No expansion factor may be below zero
@@ -279,9 +312,9 @@ grow <- function( InputList ) {
 											}
 										}
 										
-										## If relative density metric supplied, reduce iteratively until target met
+										# If relative density metric supplied, reduce iteratively until target met
 										if(metric=="rel"){
-											## Go in reverse order through the treelist, calculating RD to identify point at which removal must be specific
+											# Go in reverse order through the treelist, calculating RD to identify point at which removal must be specific
 											for(i in which(out$expan>0)){
 												bap = sum(pi*(out$dbh[1:i]/2)^2/144*out$expan[1:i]) # Basal area per acre
 												qmd = sqrt(bap/(0.005454*sum(out$expan[1:i]))) # Calculate quadratic mean diameter
@@ -291,7 +324,7 @@ grow <- function( InputList ) {
 											}
 											if(i>1){out$expan[1:(i-1)] <- 0} # Trees below k point removed completed if k > 1	
 											repeat{
-												## Remove expansion factor until target reached
+												# Remove expansion factor until target reached
 												out$expan[i]=out$expan[i]-0.001 # Remove expansion factor 
 												out$expan[out$expan<0] = 0 # No expansion factor may be below zero
 												bap = sum(pi*(out$dbh/2)^2/144*(out$expan)) # Basal area per acre
@@ -303,37 +336,37 @@ grow <- function( InputList ) {
 									}
 								}
 								
-								## Without respect to metric employed, finalize expansion factors in the same way
+								# Without respect to metric employed, finalize expansion factors in the same way
 								out$mgexp = out$mgexp-out$expan # Reduce to find cut tree expansion factor
 								out = out[order(out$index),] # Return to the orginal order
 								out = subset(out,select=-c(ba,index)) # Drop the basal area per tree and index columns
 							},
+							# Row below thinning: trees removed from small DBH to large DBH after row thinning small trees (Osborne & J.P. McTague 2013)
 							"rowbelow"={
 								
-								## Provided spreadsheet formatted for 'special procedure' apply row-below thinning (McTague and Osborne, 2013)
 								out$index = 1:nrow(out) # Assign an index value to ensure good sorting
 								out$dc = findInterval(out$dbh,seq(1,240,by=2))*2 # Bin into 2'' DBH (in) classes
 								out$bap = pi*(out$dbh/2)^2 /144 * out$expan # Calculate basal area each tree represents (sq ft/ac)
 								divide = aggregate(list(bap=out$bap),by=list(dc=out$dc),FUN=sum) # Calculate basal area by 2'' diameter class
 								divide = divide$dc[which.max(divide$bap)] # Identify maximum basal area for a given 2'' diameter class (division point)
 								
-								## [1] First cut trees uniformly; by row thinning given a user specified level
+								# First: cut trees uniformly, by row thinning given a user specified level
 								pr = 1-level # Proportion to remove by row thinning 
 								out$expan = pr*out$expan # Row thin trees at the given level; reducing expansion factors
 								
-								## [2] Second, cut all trees from the smallest diameter class
+								# Second: cut all trees from the smallest diameter class
 								smallcut = out[out$expan!=0,] # Identify trees with expansion factors
 								smallcut = smallcut$index[smallcut$dc==min(smallcut$dc)] # Position (index) of the smallest trees
 								out$expan[smallcut] <- 0 # Set smallest trees expansion factors to zero         
 								
-								## [3] Third, cut 65% of the trees below the divide and 35% of the trees above the divide; dependent of metric employed
+								# Third: cut 65% of the trees below the divide and 35% of the trees above the divide, dependent of metric employed
 								if(metric=="bap"){
 									
-									## Check for fatal errors, then proceed into routine
+									# Check for fatal errors, then proceed into routine
 									bap = sum(with(out,pi*(dbh/2)^2/144*(expan)))  # Calculate basal area per acre (ft2/ac)
 									fatal[target>=bap] <-1 # Fatal error; Not enough basal area left to meet target
 									
-									## Provided enough basal area exists, continue procedure
+									# Provided enough basal area exists, continue procedure
 									if(fatal==0){
 										r = 0.65*(bap-target) # Identify basal remove from below
 										out$bap = pi*(out$dbh/2)^2 /144 * out$expan # Calculate basal area each tree represents (sq ft/ac)
@@ -357,7 +390,7 @@ grow <- function( InputList ) {
 									
 								} else {
 									
-									## Check for fatal errors, then proceed into routine
+									# Check for fatal errors, then proceed into routine
 									bap = with(out,sum(dbh^2*0.005454*expan)) # Calculate basal area per acre (ft2/ac)
 									qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate Dq (in)
 									rel = bap/(qmd)^0.5 # Calculate relative density, under Curtis' definition
@@ -390,7 +423,7 @@ grow <- function( InputList ) {
 												rel = bap/(qmd)^0.5  # Calculate relative density, as calculated by Curtis
 											}
 										}
-										## Remove remaining RD from above
+										# Remove remaining RD from above
 										out = rbind(above,below) # Recombine above and below split
 										bap = with(out,sum(dbh^2*0.005454*expan)) # Calculate basal area per acre (ft2/ac)
 										qmd = sqrt(bap/(0.005454*sum(out$expan))) # Calculate Dq (in)
@@ -412,6 +445,7 @@ grow <- function( InputList ) {
 								out$mgexp = out$mgexp-out$expan # Find the cut tree expansion factor; see the earlier procedures
 								
 							},
+							# User thinning: remove trees marked by user-code to a given proportion
 							"user"={
 								out$expan[out$user==triggers$year] <- out$expan[out$user==triggers$year] * (1-target)
 								out$mgexp = out$mgexp-out$expan # Reduce to find cut tree expansion factor
@@ -423,10 +457,9 @@ grow <- function( InputList ) {
 				inform[[2]] = out # Submit the thinned tree list
 			}
 			
-			## * Begin the Fertilization Algorithm * ##
+			# Fertilization algorithms are as follows:
 			if(any(act$what=="fert")) {
-				
-				## Extract user-supplied arguments to the fertilization algorithm
+				# Extract user-supplied arguments to the fertilization algorithm
 				how = act$how[act$what=="fert"] # Method of thinning
 				metric = act$metric[act$what=="fert"] # Metric associated with the target condition
 				target = as.numeric(act$target[act$what=="fert"]) # Target condition in units of the metric
@@ -441,12 +474,12 @@ grow <- function( InputList ) {
 		return(inform) # Return information to inform Organon, based on indicator keys
 	}
 	
-	## Function to run the statistical variant of Organon (CIPSANON) for a single sample
+	## Function to run the Cipsanon model in R
 	.cipsanon <- function( sample, unit, activity ) {
 		
-		n = nrow(sample) # The number of trees included in the 'big sample'; a combination of many samples
+		n = nrow(sample) # Number of trees in the composite sample
 		
-		## Errors can occur when running Organon; load the possible error table
+		## Load possible errors for the Cipsanon DLL's
 		flags = read.csv(paste(warn,"flags.csv",sep="/")) # Read the table into R
 		flags = split(flags,flags$level) # Split up by stand and tree level errors
 		flags$stand$exists = 0 # Assume that stand level errors do not exist 
@@ -454,28 +487,34 @@ grow <- function( InputList ) {
 		flags$tree = as.data.frame(matrix(0,nrow=n,ncol=17,dimnames=list(1:n,unique(flags$tree$flag))))
 		
 		## Extract soil and climatic estimates to drive productivity if specified for the sample 
-		DFSQ = 0 # Initialize indicator for running the mechanistic model to zero
+		DFSQ = 0 # Indicator for using the mechanistic site index option (only for Cipsanon)
 		extracts = rep(0,2) # Initialize extracted values to zero
 		# Initialize extracted soil and weather attributes to zero
 		if( unit$driver==1 ) {				
 			# Find the sample location using the supplied latitude and longitude
 			p <- SpatialPoints( cbind(unit$longitude,unit$latitude),proj4string=CRS("+proj=longlat") ) 
 			extracts = c(unit$whc,unit$pptdd) # Set by default, extracted values to what the user specified
-			## If the user left WHC and PPTDD blank, give the a 'CIPS best guess'
-			extracts[1][extracts[1]==0] = extract(get('whc50',envir=rasters),p)/100 * 19.685 # Convert WHC from a percentage to a ratio, and to inches by multiplying by 20 (50 cm = 19.685 inches)
-			extracts[2][extracts[2]==0] = extract(get('pptdd5',envir=rasters),p) * 0.0393701 # Convert PPTDD to inches 
-			DFSQ[all(!is.na(extracts))] <- 1 # Provided all drivers found, indicate to run the mechanistic model
+			## If the user left WHC and PPTDD blank, give a best guess using the spatial files
+			# Convert whc from a percentage to a ratio and to inches (50 cm = 19.685 inches)
+			extracts[1][extracts[1]==0] = extract(get('whc50',envir=rasters),p)/100 * 19.685 
+			# Convert pptdd into inches 
+			extracts[2][extracts[2]==0] = extract(get('pptdd5',envir=rasters),p) * 0.0393701 
+			DFSQ[all(!is.na(extracts))] <- 1 # Provided all drivers found in spatial file: indicate to run the mechanistic model
 		}
 		extracts[DFSQ==0] <- 0 # Zero out the extracted values if they will not be used to drive productivity		
-		# Report if the sample could not be driven with the mechanistic model
-		if(unit$driver==1 & DFSQ==0) {winDialog("ok",paste("Could Not Drive Unit",unit$unit,"Sample",unit$sample,"With the Mechanistic Model, a Traditional Site Index Was Used Instead"))}
+		# Report if the unit could not be driven with the mechanistic option
+		if(unit$driver==1 & DFSQ==0) {
+			winDialog("ok",paste("Could not estimate whc or pptdd for unit",unit$unit,"sample",unit$sample,"so a tradition site index will be used."))
+		}
 		
 		## Format Organon vectors for use in the Fortran subroutine (prepare) 
 		SPECIES=rep(0,2000);USER=rep(0,2000);DBH=rep(0,2000);HT=rep(0,2000);CR=rep(0,2000);EXPAN=rep(0,2000);RADGRO=rep(0,2000);IERROR=0;
 		RVARS=rep(0,30);SERROR=rep(0,13);TERROR=rep(0,2000*6);SWARNING=rep(0,8);TWARNING=rep(0,2000);GROWTH=rep(0,2000);ACALIB=rep(0,3*18);
 		
 		## Supply arguments to each prepare subroutine vector
-		VERSION = unit$version # Version of Organon to run
+		VERSION = unit$variant # variant of Organon to run
+		VERSION[VERSION==2] <- 1 # SWO version in input: 2, in DLL: 1.
+		VERSION[VERSION==3] <- 2 # SMC version in input: 3, in DLL: 2.
 		NPTS = length(unique(sample$sample)) # Number of sample points fixed at one
 		NTREES = n # Number of trees in the 'big' sample
 		STAGE = unit$stage # Stand age
@@ -511,7 +550,7 @@ grow <- function( InputList ) {
 		## Provided no fatal errors, procedure to growing the stand
 		if(fatal==0) {
 			
-			## Format Organon vectors for use in the Fortran subroutine (execute/wood quality)
+			## Format Cipsanon vectors for use in the Fortran subroutine (execute/wood quality)
 			TREENO=rep(0,2000);PTNO=rep(0,2000);SPECIES=rep(0,2000);USER=rep(0,2000);INDS=rep(0,30);DBH1=rep(0,2000);HT1=rep(0,2000);
 			CR1=rep(0,2000);SCR1=rep(0,2000);EXPAN1=rep(0,2000);MGEXP=rep(0,2000);RVARS=rep(0,30);ACALIB=rep(0,3*18);PN=rep(0,25);
 			YSF=rep(0,25);BART=rep(0,25);YST=rep(0,25);NPR=rep(0,2000);PRAGE=rep(0,2000*3);PRLH=rep(0,2000*3);PRDBH=rep(0,2000*3);
@@ -521,12 +560,12 @@ grow <- function( InputList ) {
 			CR2=rep(0,2000);SCR2=rep(0,2000);EXPAN2=rep(0,2000);STOR=rep(0,30);BABT=0;CYCLG=0;IDIB=rep(0,2000*40);
 			
 			## Supply arguments to each execute subroutine vector
-			VERSION = prepared[[1]] # Version of Organon to run
+			VERSION = prepared[[1]] # Version of Cipsanon to run
 			NPTS = prepared[[2]] # Number of sample points fixed at one
 			NTREES1 = prepared[[3]] # Number of trees prior to growing
 			STAGE = prepared[[4]] # Stand age
 			BHAGE = prepared[[5]] # Breast height age 
-			if(all(sample$tree==0)) {TREENO[1:n]=1:n} else {TREENO[1:n]=sample$tree} ## If all tree number set to zero, create tree numbers for the 'big sample'					
+			if(all(sample$tree==0)) {TREENO[1:n]=1:n} else {TREENO[1:n]=sample$tree} # Create tree numbers if all set to zero					
 			PTNO[1:n] = sample$sample # Sample number corresponding to each tree
 			SPECIES = prepared[[6]] # Species for each tree
 			USER = prepared[[7]] # Code for user thinning
@@ -727,7 +766,7 @@ grow <- function( InputList ) {
 				CYCLG = k # Update the value of cycles grown so far
 			}	
 			
-			if(fatal==1) {winDialog("ok",paste("Fatal Error Occured While Growing Unit",unit$unit))} # Report if a fatal error occured during the growth routine
+			if(fatal==1) {winDialog("ok",paste("Fatal error occured while growing unit",unit$unit))} # Report if a fatal error occured during the growth routine
 			
 			executed = executed[!is.na(executed$period),] ## Recalling that maximum possible matrix space was added to place grown tree values, reduce to populated rows
 			
@@ -771,7 +810,7 @@ grow <- function( InputList ) {
 			
 			## Capture final-felling wood quality values and associate with any thinned tree values if they exist	
 			glassin = data.frame(sample=rep(PTNO,40),period=CYCLG,subperiod=1,stage=STAGE,tree=rep(TREENO,40),mgexp=rep(MGEXP,40),brht=BRHT,brdia=BRDIA,jcore=JCORE,idib=IDIB)
-			if(exists("glassout")) {glassout=rbind(glassout,glassin)} else {glassout=glassin} # Bind in, or name the wood quality output
+			if(exists("glassout")) {glassout=rbind(glassout,glassin)} else {glassout=glassin} # Bind in or name the wood quality output
 			
 			## Prepare the wood quality information for output		
 			glassout = cbind(unit=unit$unit,glassout) # Assign the unit identifier 
@@ -796,7 +835,7 @@ grow <- function( InputList ) {
 			LOGTA = unit$logta # Trim allowance for Scribner volume
 			
 			## Estimate volume for the sampled trees
-			dyn.load(paste(dlls,"CIPSVOL.dll",sep="/"),type="Fortran") # Load the Organon volume subroutine
+			dyn.load(paste(dlls,"CIPSVOL.dll",sep="/"),type="Fortran") # Load the Cipsanon volume subroutine
 			
 			## Depending on tree list size, simply process or split into equal intervals and process
 			if(nrow(executed)<2000){
@@ -835,7 +874,7 @@ grow <- function( InputList ) {
 			}
 			dyn.unload(paste(dlls,"CIPSVOL.dll",sep="/")) # Unload the volume calculation DLL
 			
-			executed = cbind(data.frame(variant=1,unit=unit$unit),executed) # Variant and unit identifiers				
+			executed = cbind(data.frame(model=1,unit=unit$unit),executed) # model and unit identifiers				
 		}
 		
 		## Finalize the flag output; especially important to deal with any fatal errors! 
@@ -855,10 +894,10 @@ grow <- function( InputList ) {
 		return(cipsanon.out) # Return the list
 	}
 	
-	## Function to run the vanilla variant of Organon (Organon) for a single sample
+	## Function to run the Organon model in R
 	.organon <- function( sample, unit, activity ) {
 		
-		n = nrow(sample) # The number of trees included in the 'big sample'; a combination of many samples
+		n = nrow(sample) # Number of trees in the composite sample
 		
 		## Errors can occur when running Organon; load the possible error table
 		flags = read.csv(paste(warn,"flags.csv",sep="/")) # Read the table into R
@@ -872,7 +911,7 @@ grow <- function( InputList ) {
 		RVARS=rep(0,30);SERROR=rep(0,13);TERROR=rep(0,2000*6);SWARNING=rep(0,8);TWARNING=rep(0,2000);GROWTH=rep(0,2000);ACALIB=rep(0,3*18)
 		
 		## Supply arguments to each prepare subroutine vector
-		VERSION = unit$version # Version of Organon to run
+		VERSION = unit$variant # variant of Organon to run
 		NPTS = length(unique(sample$sample)) # Number of sample points fixed at one
 		NTREES = n # Number of trees in the sample
 		STAGE = unit$stage # Stand age
@@ -1229,7 +1268,7 @@ grow <- function( InputList ) {
 			}
 			dyn.unload(paste(dlls,"CIPSVOL.dll",sep="/")) # Unload the volume calculation DLL
 			
-			executed = cbind(data.frame(variant=1,unit=unit$unit),executed) # Variant and unit identifiers		
+			executed = cbind(data.frame(model=1,unit=unit$unit),executed) # model and unit identifiers		
 		}
 		
 		## Finalize the flag output; especially important to deal with any fatal errors! 
@@ -1254,9 +1293,9 @@ grow <- function( InputList ) {
 	cipsr.out = lapply(units$unit,function(x){
 				i = match(x,units$unit) # Note the progress in the iteration
 				t <- i # Update iterator for progress and bar
-				setWinProgressBar(pbar,t,title=paste("CIPS-R Progress: ",round(t/T*100,0),"%",sep="")) 
-				## Route to the correct CIPSR variant
-				if(units$variant[units$unit==x]==1) {
+				setWinProgressBar(pbar,t,title=paste("cipsr Progress: ",round(t/T*100,0),"%",sep="")) 
+				## Route to the correct CIPSR model
+				if(units$model[units$unit==x]==1) {
 					out = .organon(subset(samples,unit==x),unit=subset(units,unit==x),subset(activities,unit==x))
 				} else {
 					out = .cipsanon(subset(samples,unit==x),unit=subset(units,unit==x),subset(activities,unit==x))
@@ -1264,7 +1303,7 @@ grow <- function( InputList ) {
 			}
 	)
 	
-	## Isolate and combine components of the finalized CIPS-R output list
+	## Isolate and combine components of the finalized cipsr output list
 	treelist = list() # Tree list is comprised of individual tree measurements
 	for(j in 1:length(units$unit)) { treelist[[j]] = cipsr.out[[j]][[1]]; cipsr.out[[j]][[1]] <- NULL } # Place into a list
 	treelist[sapply(treelist, is.null)] <- NULL # Remove fatal treelist output
@@ -1280,7 +1319,7 @@ grow <- function( InputList ) {
 				subperiods = split(periods,paste(periods$period,periods$subperiod))	
 				out = lapply(subperiods, function(x) {
 							n = nrow(x) # The number of trees in the sample
-							variant = x$variant[1] # CIPSR variant that was employed
+							model = x$model[1] # CIPSR model that was employed
 							unit = x$unit[1] # Unit index value
 							period = x$period[1] # Period of projection
 							subperiod = x$subperiod[1] # Subperiod of projection
@@ -1294,7 +1333,7 @@ grow <- function( InputList ) {
 							sdi = tpa*(qmd/10)^1.605 # Stand density index
 							rel = bap/(qmd^0.5) # Relative density 			
 							rel[is.na(rel)] <- 0 # Ensure, at final harvest, zero not null value
-							data.frame(variant,unit,period,subperiod,stage,bap,tpa,qmd,sdi,rel,bfv,cfv)
+							data.frame(model,unit,period,subperiod,stage,bap,tpa,qmd,sdi,rel,bfv,cfv)
 						}
 				)
 				out = do.call("rbind",out) # Bind into a data frame
@@ -1424,7 +1463,7 @@ grow <- function( InputList ) {
 				sheet=c("treelist","samplelist","woodquality","standflags","treeflags"))			
 	}
 	
-	setWinProgressBar(pbar,T,title=paste("CIPS-R Progress: ",100,"%",sep="")) # Set progress to 100%
+	setWinProgressBar(pbar,T,title=paste("cipsr Progress: ",100,"%",sep="")) # Set progress to 100%
 	close(pbar) # Close the progress bar 
 	
 	return(cipsr.out) # Return the CIPS R output list
