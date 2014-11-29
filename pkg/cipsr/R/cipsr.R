@@ -101,7 +101,7 @@ grow <- function( InputList ) {
 		return(winDialog("ok","At least one negative value exists in the samples part of your database."))
 	}
 		
-	if(any(units$model==2 & units$variant==2 & units$driver==1)) {
+	if(any(units$model==2 & units$variant==3 & units$driver==1)) {
 		return(winDialog("ok","The SMC variant of Cipasnon does not support a mechanistic site index option."))
 	}
 	

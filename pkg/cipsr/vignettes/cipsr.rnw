@@ -182,8 +182,8 @@ names(mydata)
 	\item[variant] \hfill \\ 
 	Variant of a given model variant to use.
 	\begin{description}
-		\item[1] NWO - Northwest Oregon
-		\item[2] SWO - Southwest Oregon
+		\item[1] SWO - Southwest Oregon
+		\item[2] NWO - Northwest Oregon
 		\item[3] SMC - Stand Management Cooperative
 	\end{description}	 
 	\item[driver] \hfill \\ 
@@ -538,7 +538,7 @@ library(cipsr)
 # Specify all units are grown to 100-years stand age
 cipsrexam$units$groyrs  = 100 - cipsrexam$units$stage
 
-# Specify to use the Cipsanon model, with the SMC variant
+# Specify to use the Cipsanon model
 cipsrexam$units$model = 2
 
 # Specify that some units use SWO variant and SMC for others
