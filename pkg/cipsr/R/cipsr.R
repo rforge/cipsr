@@ -519,7 +519,7 @@ grow <- function( InputList ) {
 		
 		## Supply arguments to each prepare subroutine vector
 		VERSION = unit$variant # variant of Organon to run
-		VERSION[VERSION==2] <- 1 # SWO version in input: 2, in DLL: 1.
+		VERSION[VERSION==1] <- 1 # SWO version in input: 1, in DLL: 1.
 		VERSION[VERSION==3] <- 2 # SMC version in input: 3, in DLL: 2.
 		NPTS = length(unique(sample$sample)) # Number of sample points fixed at one
 		NTREES = n # Number of trees in the 'big' sample

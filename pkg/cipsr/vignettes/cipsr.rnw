@@ -38,7 +38,7 @@
 
 \abstract{
 \label{sec:Abstract}
-Organon and Cipsanon are two model variants developed and maintained by the Center for Intensive Planted-forest Silviculture at Oregon State University. These models allow the prediction of growth, yield and wood quality attributes of individual trees under a variety of stand conditions and silvicultural treatments.  This vignette is an brief introduction to the \textit{cipsr} package, which provides an R interface to the Organon and Cipsanon models. 
+Organon and Cipsanon are two models developed and maintained by the Center for Intensive Planted-forest Silviculture at Oregon State University. These models allow the prediction of growth, yield and wood quality attributes of individual trees under a variety of stand conditions and silvicultural treatments.  This vignette is an brief introduction to the \textit{cipsr} package, which provides an R interface to the Organon and Cipsanon models. 
 }
 
 \section{Introduction}
@@ -53,7 +53,7 @@ Each version of Organon has been continually developed over the past thirty year
 
 The Center for Intensive Planted-forest Silviculture was established at Oregon State University in 2006 by Doug Maguire.  During this time, Organon has been extensively developed by staff at CIPS.  With collaboration from the OSU Hardwood Silviculture Cooperative (HSC) a Red-Alder version of Organon (RAP-Organon) was produced.  Organon equations have also been enhanced, including the equations for predicting top height, H/D, MCW, LCW, crown profile, HCB, diameter increment, height increment, crown recession rate, mortality rate, size-density trajectory, and thinning multipliers for the dynamic equations.  These improvements were made by Doug Maguire, David Hann, Aaron Weiskittel, Andrew Bluhm and Tzeng Lam. \\
 
-The \textit{cipsr} package is one of the latest improvements directed at the Organon model. This package provides an R interface to the Organon model, as well as a new model called Cipsanon.  Cipsanon is an experimental spin-off of the Organon model.  The Cipsanon variant includes unique features not in Organon: annualized predictions and the ability to predict site index based upon water-holding capacity and growing season precipitation.  The \textit{cipsr} package has also been developed to support coinciding research which enhances both models capacity to predict attributes important to wood quality. \\
+The \textit{cipsr} package is one of the latest improvements directed at the Organon model. This package provides an R interface to the Organon model, as well as a new model called Cipsanon.  Cipsanon is an experimental spin-off of the Organon model.  The Cipsanon model includes unique features not in Organon: annualized predictions and the ability to predict site index based upon water-holding capacity and growing season precipitation.  The \textit{cipsr} package has also been developed to support coinciding research which enhances both models capacity to predict attributes important to wood quality. \\
 
 Users may ask why R has been selected as the new platform for using Organon and Cipsanon, especially given its long history of development as a DOS console.  Early in the development of Organon, it was unclear whether the model should have been developed for a PC, or mainframe.  We have faced a similar question in the mature years of Organon: should the model be distributed as software with a graphical user-interface (GUI) or through a programming interface?  We found it best to distribute Organon and Cipsanon through \textit{cipsr} in the R statistical programming environment for a number of reasons.  Many models have become obsolescent because advances in operating systems (OS) have outpaced software development.  Code maintained in R, requires much less maintenance than code associated with a forest modeling software, decreasing the chance the model will fall out of currency with a users operating system.  Using Organon in a programming environment offers many benefits beyond that offered in a typical forest model software.  In \textit{cipsr} a user may predict the growth, yield and wood quality of hundreds of forest stands at a time, instead of just one single stand.  With this information the user can access R's powerful post-processing capabilities to apply statistical tests, run optimization routines, produce unique graphs or create customized tables.  R is also a free software, which increases the possibilities for collaboration among many individuals for a certain project or analysis task.  If R does not appeal to you after these compelling arguments, you can still find access to Organon through a host of other methods including DLL files, an Excel application and the DOS console. \\
 
@@ -103,7 +103,7 @@ names(mydata)
 	\item[user] \hfill \\ 
 	Stand age to remove a given tree (year).  This value is associated with the user thinning approach which may be specified in \textit{activities}.  
 	\item[species] \hfill \\  
-	Tree species identification code.  The table given below indicates the species name corresponding to its code and whether it is supported in the a model variant.  SWO is Southwestern Oregon, NWO is Northwest Oregon and SMC is the Stand Management Cooperative variants. \\
+	Tree species identification code.  The table given below indicates the species name corresponding to its code and whether it is supported in the a model.  SWO is Southwestern Oregon, NWO is Northwest Oregon and SMC is the Stand Management Cooperative variants. \\
 	
 	\begin{center}
 		\begin{tabular}{ | l | l | l | 1 | p{5cm} |}
@@ -542,7 +542,7 @@ cipsrexam$units$groyrs  = 100 - cipsrexam$units$stage
 cipsrexam$units$model = 2
 
 # Specify that some units use SWO variant and SMC for others
-cipsrexam$units$variant = ifelse(cipsrexam$units$unit %in% c(2,13),2,3)  
+cipsrexam$units$variant = ifelse(cipsrexam$units$unit %in% c(2,13),1,3)  
 
 # Exclude one unit from the analysis 
 cipsrexam = lapply(cipsrexam,function(x){
