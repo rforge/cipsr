@@ -1311,6 +1311,8 @@ grow <- function( InputList ) {
 				
 				t <<- t+1 # Update iterator for progress and bar
 				
+				return(out) # Return the xth units simulation information
+				
 			}
 	)
 	
