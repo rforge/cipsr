@@ -6,12 +6,12 @@ load.data <- function(InputFile) {
 		
 	# User-specified database exists in the working directory?
 	if(!file.exists(InputFile)) {
-		return(winDialog("ok","Input database not found."))
+		return(message("Input database not found."))
 	}
 	
 	# Database is in the correct file format?
 	if(!grepl(".xls",InputFile)) {
-		return(winDialog("ok","Input database not in proper format (.xls)."))
+		return(message("Input database not in proper format (.xls)."))
 	}
 	
 	# Load the input database using XLConnect
@@ -22,7 +22,7 @@ load.data <- function(InputFile) {
 	
 	# Check if the database was successfully loaded
 	if(!exists("InputList")) {
-		return(winDialog("ok","Something went wrong loading your data."))
+		return(message("Something went wrong loading your data."))
 	} 
 	
 	return(InputList) # Return the loaded dataset.
@@ -54,14 +54,14 @@ grow <- function( InputList ) {
 	)
 	
 	# Only permit i386 and 64x architecture to be used 
-	if(!R.Version()$arch %in% c("i386","x86_64")) return(winDialog("ok","Only R i386 and 64x is Supported")) 
+	if(!R.Version()$arch %in% c("i386","x86_64")) return(message("Only R i386 and 64x is Supported")) 
 		
 	spat = paste(root,"spat",sep="/") # Geospatial files
 	warn = paste(root,"warn",sep="/") # Error message files
 		
 	# Ensure that the input list contains the correct set of tables (i.e. if user loads data without load.data function)
 	if(!all(c("samples","units","activities") %in% names(InputList))) { 
-		return(winDialog("ok","Input list is not named properly."))
+		return(message("Input list is not named properly."))
 	} 
 	
 	# Extract and clean data from the input list
@@ -88,29 +88,37 @@ grow <- function( InputList ) {
 	
 	# Inform user if unit and sample cominations in input dataset fail to match
 	if(any(fatal)) {
-		return(winDialog("ok","At least one unit and sample combination does not match across the input dataset."))
+		return(message("At least one unit and sample combination does not match across the input dataset."))
 	}
 	rm(index, fatal) # Clean up from the above process
 	
 	# Continue checks for many common mistakes in the input dataset
 	if(any(units$model==2 & units$woodqual==1)) {
-		return(winDialog("ok","Cipsanon does not support wood quality estimation at this time."))
+		return(message("Cipsanon does not support wood quality estimation at this time."))
 	}  
 	
 	if(any(subset(samples,select=-c(unit,sample,tree))<0)) {
-		return(winDialog("ok","At least one negative value exists in the samples part of your database."))
+		return(message("At least one negative value exists in the samples part of your database."))
 	}
 		
 	if(any(units$model==2 & units$variant==3 & units$driver==1)) {
-		return(winDialog("ok","The SMC variant of Cipasnon does not support a mechanistic site index option."))
+		return(message("The SMC variant of Cipasnon does not support a mechanistic site index option."))
+	}
+		
+	if(any(units$groyrs==0)){
+		return(message("Units must have a groyrs value greater than zero."))
 	}
 	
-	if(any(units$model==2 & units$variant==1)) {
-		return(winDialog("ok","Cipsanon only supports SWO and SMC variants."))
-	}  
+	if(any(units$model==1 & !units$variant %in% c(1,2,3))){
+		return(message("Organon variant incorrect. Specify a number: 1 (SWO), 2 (NWO) or 3 (SMC)."))
+	}
 	
-	if(any(units$groyrs==0)){
-		return(winDialog("ok","Units must have a groyrs value greater than zero."))
+	if(any(units$model==2 & !units$variant %in% c(1,2,3))){
+		return(message("Cipsanon variant incorrect. Specify a number: 1 (SWO) or 3 (SMC)."))
+	}
+	
+	if(!any(units$model %in% c(1,2))){
+		return(message("Incorrect model choice. Specify a number 1 (Organon) or 2 (Cipsanon)"))
 	}
 		
 	# Load spatial files if the will be used in any simulation 
@@ -120,10 +128,6 @@ grow <- function( InputList ) {
 		assign('whc50',raster(paste(spat,"whc50.img",sep="/")),envir=rasters) 
 		assign('pptdd5',raster(paste(spat,"pptdd5.img",sep="/")),envir=rasters) 
 	}
-	
-	## Create and initialize a progress bar to track processing of samples
-	T = length(unique(units$unit)) + 1 # The total number of orders to tick by
-	pbar <- winProgressBar(title="cipsr Progress: 0%",min=0,max=T,width=300) 
 	
 	## Function: Contains the thinning and fertilization algorithms for Organon & Cipsanon
 	.treatment <- function(executed,activity,triggers) {
@@ -183,7 +187,7 @@ grow <- function( InputList ) {
 					fatal[how=="rowbelow" & level<=0 | level>=1] <- 1 # Row thinning level must be a ratio between 0 and 1
 				}
 				# If row-below thinning specified, but no level argument existing, correct template not in use!
-				if(how=="rowbelow" & !("level" %in% names(act))) {fatal<-1; winDialog("ok","Need Level Argument to be Supplied")}
+				if(how=="rowbelow" & !("level" %in% names(act))) {fatal<-1; message("Need Level Argument to be Supplied")}
 				fatal[triggers$tpa==0] <- 1  # Trees per acre is zero
 				fatal[metric=="tpa" & triggers$tpa < target] <- 1 # Target trees per acre greater than current trees per acre
 				fatal[metric=="bap" & triggers$bap < target] <- 1 # Target basal area per acre greater than current basal area per acre
@@ -192,7 +196,7 @@ grow <- function( InputList ) {
 				fatal[target < 0] <- 1 # The target sample condition was negative
 				fatal[how=="user" & metric!="prop"] <- 1 # User thin requested with out a proportion metric specified
 				fatal[how=="user" & !triggers$year %in% out$user] <- 1 # User thinning without the year indicator specified
-				if(fatal==1) winDialog("ok",paste("Infeasible Thinning:","Unit",unique(activity$unit))) # Report a fatal error if it occurs
+				if(fatal==1) message(paste("Infeasible Thinning:","Unit",unique(activity$unit))) # Report a fatal error if it occurs
 				
 				# Provided no fatal errors, procede to the thinning algorithms
 				if(fatal==0){
@@ -504,7 +508,7 @@ grow <- function( InputList ) {
 		extracts[DFSQ==0] <- 0 # Zero out the extracted values if they will not be used to drive productivity		
 		# Report if the unit could not be driven with the mechanistic option
 		if(unit$driver==1 & DFSQ==0) {
-			winDialog("ok",paste("Could not estimate whc or pptdd for unit",unit$unit,"sample",unit$sample,"so a tradition site index will be used."))
+			message(paste("Could not estimate whc or pptdd for unit",unit$unit,"sample",unit$sample,"so a tradition site index will be used."))
 		}
 		
 		## Format Organon vectors for use in the Fortran subroutine (prepare) 
@@ -540,7 +544,7 @@ grow <- function( InputList ) {
 		dyn.unload(paste(dlls,"CIPSEDIT.dll",sep="/")) # Unload the prepare subroutine
 		
 		fatal = prepared[[20]] # Check if a fatal error occured while processing the sample
-		if(fatal==1) {winDialog("ok",paste("Fatal Error Occured While Preparing Unit",unit$unit))} # Report if a fatal error occured during the prepare routine
+		if(fatal==1) {message(paste("Fatal Error Occured While Preparing Unit",unit$unit))} # Report if a fatal error occured during the prepare routine
 		
 		## Extract stand and tree level warnings and errors from the prepare subroutine
 		flags$stand$exists[flags$stand$routine=="prepare"] <- c(prepared[[16]],prepared[[18]])
@@ -766,7 +770,7 @@ grow <- function( InputList ) {
 				CYCLG = k # Update the value of cycles grown so far
 			}	
 			
-			if(fatal==1) {winDialog("ok",paste("Fatal error occured while growing unit",unit$unit))} # Report if a fatal error occured during the growth routine
+			if(fatal==1) {message(paste("Fatal error occured while growing unit",unit$unit))} # Report if a fatal error occured during the growth routine
 			
 			executed = executed[!is.na(executed$period),] ## Recalling that maximum possible matrix space was added to place grown tree values, reduce to populated rows
 			
@@ -936,7 +940,7 @@ grow <- function( InputList ) {
 		dyn.unload(paste(dlls,"ORGEDIT.dll",sep="/")) # Unload the prepare subroutine
 		
 		fatal = prepared[[19]] # Check if a fatal error occured while processing the sample
-		if(fatal==1) {winDialog("ok",paste("Fatal Error Occured While Preparing Unit",unit$unit))} # Report if a fatal error occured during the prepare routine
+		if(fatal==1) {message(paste("Fatal Error Occured While Preparing Unit",unit$unit))} # Report if a fatal error occured during the prepare routine
 		
 		## Extract stand and tree level warnings and errors from the prepare subroutine
 		flags$stand$exists[flags$stand$routine=="prepare"] <- c(prepared[[15]],prepared[[17]])
@@ -1160,7 +1164,7 @@ grow <- function( InputList ) {
 				CYCLG = k # Update the value of cycles grown so far
 			}	
 			
-			if(fatal==1) {winDialog("ok",paste("Fatal Error Occured While Growing Unit",unit$unit))} # Report if a fatal error occured during the growth routine
+			if(fatal==1) {message(paste("Fatal Error Occured While Growing Unit",unit$unit))} # Report if a fatal error occured during the growth routine
 			
 			executed = executed[!is.na(executed$period), ] ## Recalling that maximum possible matrix space was added to place grown tree values, reduce to populated rows
 			
@@ -1289,17 +1293,24 @@ grow <- function( InputList ) {
 		return(organon.out) # Return the list
 	}
 	
+	## Create and initialize a progress bar to track processing of samples
+	T = nrow(units) + 1 # The total number of orders to tick by
+	t = 1 # The minor unit of the progress bar
+	Progress <- txtProgressBar(min=0, max=T, style=3)
+	
 	## Grow each unit in Organon, or Cipsanon, and iteratively tick up progress bar
 	cipsr.out = lapply(units$unit,function(x){
-				i = match(x,units$unit) # Note the progress in the iteration
-				t <- i # Update iterator for progress and bar
-				setWinProgressBar(pbar,t,title=paste("cipsr Progress: ",round(t/T*100,0),"%",sep="")) 
-				## Route to the correct CIPSR model
-				if(units$model[units$unit==x]==1) {
+				setTxtProgressBar(Progress,t) # Update the progress bar
+	
+				## Route to the correct CIPSR model: Organon (1) or Cipsanon (2)
+				if(units$model[units$unit==x]==1) {							
 					out = .organon(subset(samples,unit==x),unit=subset(units,unit==x),subset(activities,unit==x))
 				} else {
 					out = .cipsanon(subset(samples,unit==x),unit=subset(units,unit==x),subset(activities,unit==x))
 				}
+				
+				t <<- t+1 # Update iterator for progress and bar
+				
 			}
 	)
 	
@@ -1463,8 +1474,8 @@ grow <- function( InputList ) {
 				sheet=c("treelist","samplelist","woodquality","standflags","treeflags"))			
 	}
 	
-	setWinProgressBar(pbar,T,title=paste("cipsr Progress: ",100,"%",sep="")) # Set progress to 100%
-	close(pbar) # Close the progress bar 
+	setTxtProgressBar(Progress,T) # Finalize the progress bar 
+	close(Progress) # Close the progress bar 
 	
 	return(cipsr.out) # Return the CIPS R output list
 }	
