@@ -3,4 +3,5 @@ importFrom(XLConnect,readWorksheetFromFile)
 importFrom(XLConnect,writeWorksheetToFile)
 importFrom(raster,raster)
 importFrom(raster,extract)
+import(rgdal)
 

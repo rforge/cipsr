@@ -113,7 +113,7 @@ grow <- function( InputList ) {
 		return(message("Organon variant incorrect. Specify a number: 1 (SWO), 2 (NWO) or 3 (SMC)."))
 	}
 	
-	if(any(units$model==2 & !units$variant %in% c(1,2,3))){
+	if(any(units$model==2 & !units$variant %in% c(1,3))){
 		return(message("Cipsanon variant incorrect. Specify a number: 1 (SWO) or 3 (SMC)."))
 	}
 	
@@ -123,6 +123,8 @@ grow <- function( InputList ) {
 		
 	# Load spatial files if the will be used in any simulation 
 	if(any(units$driver==1)) {	
+		# Suppress noise from rasters reverse dependency (rgdal): inelegant solution!
+		suppressWarnings(suppressMessages(library(rgdal)))
 		rasters <- new.env() # Set up a raster enviornment to call files from		
 		# Load whc and pptdd raster files into cipsr
 		assign('whc50',raster(paste(spat,"whc50.img",sep="/")),envir=rasters) 
