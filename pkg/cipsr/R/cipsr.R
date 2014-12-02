@@ -54,7 +54,7 @@ grow <- function( InputList ) {
 							x=paste(root,"/libs/i386/",k,"32.dll",sep="")
 						},
 						"x64"={
-							x=paste(root,"/libs/i386/",k,"64.dll",sep="")
+							x=paste(root,"/libs/x64/",k,"64.dll",sep="")
 						}
 				)
 				
