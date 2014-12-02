@@ -841,7 +841,7 @@ grow <- function( InputList ) {
 			LOGTA = unit$logta # Trim allowance for Scribner volume
 			
 			## Estimate volume for the sampled trees
-			dyn.load(paste(dlls,"CIPSVOL.dll",sep="/"),type="Fortran") # Load the Cipsanon volume subroutine
+			dyn.load(paste(dlls,"CIPSVOL.dll",sep="/"),type="Fortran",PACKAGE="cipsr") # Load the Cipsanon volume subroutine
 			
 			## Depending on tree list size, simply process or split into equal intervals and process
 			if(nrow(executed)<2000){
@@ -933,7 +933,7 @@ grow <- function( InputList ) {
 		RVARS[1:6] = c(unit$dfsi,unit$otsi,unit$dfsdi,unit$wgsdi,unit$phsdi,0) # Set of six indicator variables
 		IRAD = if(any(RADGRO > 0)) {1} else {0} # Indicator if radial growth measurements were entered
 		
-		dyn.load(paste(dlls,"ORGEDIT.dll",sep="/"),type="Fortran") # Prepare subroutine
+		dyn.load(paste(dlls,"ORGEDIT.dll",sep="/"),type="Fortran",PACKAGE="cipsr") # Prepare subroutine
 		prepared = .Fortran("prepare",as.integer(VERSION),as.integer(NPTS),as.integer(NTREES),as.integer(STAGE),
 				as.integer(BHAGE),as.integer(SPECIES),as.integer(USER),as.integer(IEVEN),as.single(DBH),
 				as.single(HT), as.single(CR),as.single(EXPAN),as.single(RADGRO),as.single(RVARS),as.integer(SERROR), 
@@ -999,7 +999,7 @@ grow <- function( InputList ) {
 				CR = CR1 # Update crown ratio (in case of imputation)
 				HT = HT1 # Update tree height (in case of imputation)
 				
-				dyn.load(paste(dlls,"ORGWQ.dll",sep="/"),type="Fortran") # Load the Organon wood quality subroutine
+				dyn.load(paste(dlls,"ORGWQ.dll",sep="/"),type="Fortran",PACKAGE="cipsr") # Load the Organon wood quality subroutine
 				glasslog = .Fortran("woodqual",as.integer(IJCALC),as.integer(IEVEN),as.integer(IFINAL),as.integer(ACTION),as.integer(BHAGE),as.integer(STAGE),as.integer(NINGRO),as.integer(NPTS),as.integer(NTREES),as.integer(NWQT), 
 						as.integer(VERSION),as.integer(SPECIES),as.single(SITE_1),as.single(SITE_2),as.single(PDEN),as.single(DBH),as.single(HT),as.single(CR),as.single(SCR),as.single(EXPAN),as.single(MGEXP), 
 						as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB)) 
@@ -1061,7 +1061,7 @@ grow <- function( InputList ) {
 					
 					## If user specified quality values, update vectors for wood quality
 					if(unit$woodqual==1) {
-						dyn.load(paste(dlls,"ORGWQ.dll",sep="/"),type="Fortran") # Load the Organon wood quality subroutine
+						dyn.load(paste(dlls,"ORGWQ.dll",sep="/"),type="Fortran",PACKAGE="cipsr") # Load the Organon wood quality subroutine
 						## Calculate wood quality attributes for thinned trees
 						glasslog = .Fortran("woodqual",as.integer(IJCALC),as.integer(IEVEN),as.integer(IFINAL),as.integer(ACTION),as.integer(BHAGE),as.integer(STAGE),as.integer(NINGRO),as.integer(NPTS),as.integer(NTREES),as.integer(NWQT), 
 								as.integer(VERSION),as.integer(SPECIES),as.single(SITE_1),as.single(SITE_2),as.single(PDEN),as.single(DBH),as.single(HT),as.single(CR),as.single(SCR),as.single(EXPAN),as.single(MGEXP), 
@@ -1092,7 +1092,7 @@ grow <- function( InputList ) {
 				}
 				
 				## Call the execute subroutine in ORGRUN.dll to grow the sample
-				dyn.load(paste(dlls,"ORGRUN.dll",sep="/"),type="Fortran") # Load the execute subroutine 
+				dyn.load(paste(dlls,"ORGRUN.dll",sep="/"),type="Fortran",PACKAGE="cipsr") # Load the execute subroutine 
 				grow = .Fortran("execute",as.integer(CYCLG), as.integer(VERSION),as.integer(NPTS), as.integer(NTREES1), as.integer(STAGE), as.integer(BHAGE), 
 						as.integer(TREENO), as.integer(PTNO), as.integer(SPECIES), as.integer(USER),as.integer(INDS), as.single(DBH1), as.single(HT1), as.single(CR1), 
 						as.single(SCR1), as.single(EXPAN1), as.single(MGEXP),as.single(RVARS), as.single(ACALIB), as.single(PN), as.single(YSF),as.single(BABT), 
@@ -1143,7 +1143,7 @@ grow <- function( InputList ) {
 				
 				## If user specified quality values, update vectors for wood quality
 				if(unit$woodqual==1 & inform[[1]][1]!=1 ) {
-					dyn.load(paste(dlls,"ORGWQ.dll",sep="/"),type="Fortran") # Load the Organon wood quality subroutine
+					dyn.load(paste(dlls,"ORGWQ.dll",sep="/"),type="Fortran",PACKAGE="cipsr") # Load the Organon wood quality subroutine
 					## Call the wood quality subroutine in ORGWQ.dll to estimate wood quality
 					glasslog = .Fortran("woodqual",as.integer(IJCALC),as.integer(IEVEN),as.integer(IFINAL),as.integer(ACTION),as.integer(BHAGE),as.integer(STAGE),as.integer(NINGRO),as.integer(NPTS),as.integer(NTREES),as.integer(NWQT), 
 							as.integer(VERSION),as.integer(SPECIES),as.single(SITE_1),as.single(SITE_2),as.single(PDEN),as.single(DBH),as.single(HT),as.single(CR),as.single(SCR),as.single(EXPAN),as.single(MGEXP), 
@@ -1193,7 +1193,7 @@ grow <- function( InputList ) {
 			
 			## If user specified quality values, update vectors for wood quality
 			if(unit$woodqual==1) {
-				dyn.load(paste(dlls,"ORGWQ.dll",sep="/"),type=Fortran) # Load the wood quality DLL
+				dyn.load(paste(dlls,"ORGWQ.dll",sep="/"),type=Fortran,PACKAGE="cipsr") # Load the wood quality DLL
 				glasslog = .Fortran("woodqual",as.integer(IJCALC),as.integer(IEVEN),as.integer(IFINAL),as.integer(ACTION),as.integer(BHAGE),as.integer(STAGE),as.integer(NINGRO),as.integer(NPTS),as.integer(NTREES),as.integer(NWQT), 
 						as.integer(VERSION),as.integer(SPECIES),as.single(SITE_1),as.single(SITE_2),as.single(PDEN),as.single(DBH),as.single(HT),as.single(CR),as.single(SCR),as.single(EXPAN),as.single(MGEXP), 
 						as.single(DGRO), as.single(HGRO), as.single(CRCHNG), as.single(SCRCHNG),as.integer(BRCNT), as.integer(BRDIA), as.integer(BRHT), as.integer(JCORE), as.integer(IDIB)) 
@@ -1235,7 +1235,7 @@ grow <- function( InputList ) {
 			VERSION[VERSION>1] <- 2 # Modify version to make CIPSVOL compatible with Organon
 			
 			## Estimate volume for the sampled trees
-			dyn.load(paste(dlls,"CIPSVOL.dll",sep="/"),type=Fortran) # Load the Organon volume subroutine
+			dyn.load(paste(dlls,"CIPSVOL.dll",sep="/"),type=Fortran,PACKAGE="cipsr") # Load the Organon volume subroutine
 			
 			## Depending on tree list size, simply process or split into equal intervals and process
 			if(nrow(executed)<2000){
