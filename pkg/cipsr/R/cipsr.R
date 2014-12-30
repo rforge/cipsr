@@ -3,7 +3,12 @@
 
 ## Function: Imports formatted Excel databases using XLConnect
 load.data <- function(InputFile) {
-		
+	
+	# Check that user has read and write access to the current folder
+	if(any(sapply(0:4,function(k){file.access(getwd(),mode=k)})==-1)){
+		return(message("Work from a folder which has read/write access."))
+	}
+	
 	# User-specified database exists in the working directory?
 	if(!file.exists(InputFile)) {
 		return(message("Input database not found."))
@@ -31,6 +36,12 @@ load.data <- function(InputFile) {
 
 ## Function: Gets the Excel template and copies it into the users working directory
 get.template <- function(){
+	
+	# Check that user has read and write access to the current folder
+	if(any(sapply(0:4,function(k){file.access(getwd(),mode=k)})==-1)){
+		return(message("Work from a folder which has read/write access."))
+	}
+	
 	home = getwd() # Location of the users working directory
 	exam = paste(path.package("cipsr"),"excel","CIPSREXAM.xls",sep="/") # Location of example dataset template
 	invisible(file.copy(exam, home)) # Copy the example dataset into a users working directory
@@ -44,7 +55,7 @@ grow <- function( InputList ) {
 	root = path.package("cipsr") # Root directory for the cipsr package 
 	
 	# Only permit i386 and 64x architecture to be used 
-	if(!.Platform$r_arch %in% c("i386","x64")) return(message("Only R i386 and x64 is Supported")) 
+	if(!.Platform$r_arch %in% c("i386","x64")) return(message("\r\n Only R i386 and x64 is Supported")) 
 	
 	# Set the path to each DLL file to be loaded
 	sapply(c("CIPSEDIT","CIPSRUN","CIPSVOL","ORGEDIT","ORGRUN","ORGVOL","ORGWQ"),function(k){
@@ -69,7 +80,7 @@ grow <- function( InputList ) {
 		
 	# Ensure that the input list contains the correct set of tables (i.e. if user loads data without load.data function)
 	if(!all(c("samples","units","activities") %in% names(InputList))) { 
-		return(message("Input list is not named properly."))
+		return(message("\r\n Input list is not named properly."))
 	} 
 	
 	# Extract and clean data from the input list
@@ -96,43 +107,56 @@ grow <- function( InputList ) {
 	
 	# Inform user if unit and sample cominations in input dataset fail to match
 	if(any(fatal)) {
-		return(message("At least one unit and sample combination does not match across the input dataset."))
+		return(message("\r\n At least one unit and sample combination does not match across the input dataset."))
 	}
+	
 	rm(index, fatal) # Clean up from the above process
 	
-	# Continue checks for many common mistakes in the input dataset
+	# Inform that the current version of cipsr only allow wood quality output in Organon
 	if(any(units$model==2 & units$woodqual==1)) {
-		return(message("Cipsanon does not support wood quality estimation at this time."))
+		return(message("\r\n Cipsanon does not support wood quality estimation at this time."))
 	}  
 	
+	# Do not allow negative values in the tree measurement input
 	if(any(subset(samples,select=-c(unit,sample,tree))<0)) {
-		return(message("At least one negative value exists in the samples part of your database."))
+		return(message("\r\n At least one negative value exists in the samples part of your database."))
 	}
-		
+	
+	# Inform that Cipsanon model does not allow a mechanistic site index in the SMC variant
 	if(any(units$model==2 & units$variant==3 & units$driver==1)) {
-		return(message("The SMC variant of Cipasnon does not support a mechanistic site index option."))
+		return(message("\r\n The SMC variant of Cipasnon does not support a mechanistic site index option."))
 	}
 		
+	# All units must be grown at least one year
 	if(any(units$groyrs==0)){
-		return(message("Units must have a groyrs value greater than zero."))
+		return(message("\r\n Units must have a groyrs value greater than zero."))
 	}
 	
+	# Check that the variant number is valid
 	if(any(units$model==1 & !units$variant %in% c(1,2,3))){
-		return(message("Organon variant incorrect. Specify a number: 1 (SWO), 2 (NWO) or 3 (SMC)."))
+		return(message("\r\n Organon variant incorrect. Specify a number: 1 (SWO), 2 (NWO) or 3 (SMC)."))
 	}
 	
+	# Constrain so Cipsanon only runs the current two variants
 	if(any(units$model==2 & !units$variant %in% c(1,3))){
-		return(message("Cipsanon variant incorrect. Specify a number: 1 (SWO) or 3 (SMC)."))
+		return(message("\r\n Cipsanon variant incorrect. Specify a number: 1 (SWO) or 3 (SMC)."))
 	}
 	
+	# Stop if an invalid model number was specified
 	if(!any(units$model %in% c(1,2))){
-		return(message("Incorrect model choice. Specify a number 1 (Organon) or 2 (Cipsanon)"))
+		return(message("\r\n Incorrect model choice. Specify a number 1 (Organon) or 2 (Cipsanon)"))
 	}
 	
+	# Test that the user has read and write access in the working directory
 	if(any(sapply(0:4,function(k){file.access(home,mode=k)})==-1)){
-		return(message("Work from a folder which has read/write access."))
+		return(message("\r\n Work from a folder which has read/write access."))
 	}
-		
+	
+	# Require at least one estimate of site index
+	if(any(units$dfsi==0 & units$otsi==0)){
+		return(message("\r\n At least one unit has BOTH dfsi and otsi set to zero"))
+	}
+	
 	# Load spatial files if the will be used in any simulation 
 	if(any(units$driver==1)) {	
 		# Suppress noise from rasters reverse dependency (rgdal): inelegant solution!
@@ -201,7 +225,7 @@ grow <- function( InputList ) {
 					fatal[how=="rowbelow" & level<=0 | level>=1] <- 1 # Row thinning level must be a ratio between 0 and 1
 				}
 				# If row-below thinning specified, but no level argument existing, correct template not in use!
-				if(how=="rowbelow" & !("level" %in% names(act))) {fatal<-1; message("Need Level Argument to be Supplied")}
+				if(how=="rowbelow" & !("level" %in% names(act))) {fatal<-1; message("\r\n Need level argument to be supplied")}
 				fatal[triggers$tpa==0] <- 1  # Trees per acre is zero
 				fatal[metric=="tpa" & triggers$tpa < target] <- 1 # Target trees per acre greater than current trees per acre
 				fatal[metric=="bap" & triggers$bap < target] <- 1 # Target basal area per acre greater than current basal area per acre
@@ -210,7 +234,7 @@ grow <- function( InputList ) {
 				fatal[target < 0] <- 1 # The target sample condition was negative
 				fatal[how=="user" & metric!="prop"] <- 1 # User thin requested with out a proportion metric specified
 				fatal[how=="user" & !triggers$year %in% out$user] <- 1 # User thinning without the year indicator specified
-				if(fatal==1) message(paste("Infeasible Thinning:","Unit",unique(activity$unit))) # Report a fatal error if it occurs
+				if(fatal==1) message(paste("\r\n Infeasible thinning:","unit",unique(activity$unit))) # Report a fatal error if it occurs
 				
 				# Provided no fatal errors, procede to the thinning algorithms
 				if(fatal==0){
@@ -520,9 +544,11 @@ grow <- function( InputList ) {
 			DFSQ[all(!is.na(extracts))] <- 1 # Provided all drivers found in spatial file: indicate to run the mechanistic model
 		}
 		extracts[DFSQ==0] <- 0 # Zero out the extracted values if they will not be used to drive productivity		
+		
 		# Report if the unit could not be driven with the mechanistic option
 		if(unit$driver==1 & DFSQ==0) {
-			message(paste("Could not estimate whc or pptdd for unit",unit$unit,"sample",unit$sample,"so a tradition site index will be used."))
+			message(paste("\r\n Could not estimate whc or pptdd for unit",unit$unit,"so a tradition site index will be used."))			
+			extracts = rep(0,2) # Re-zero out the extracted values of whc and pptdd if no mechanistic option is used
 		}
 		
 		## Format Organon vectors for use in the Fortran subroutine (prepare) 
@@ -558,7 +584,7 @@ grow <- function( InputList ) {
 		dyn.unload(CIPSEDIT) # Unload the prepare subroutine
 		
 		fatal = prepared[[20]] # Check if a fatal error occured while processing the sample
-		if(fatal==1) {message(paste("Fatal Error Occured While Preparing Unit",unit$unit))} # Report if a fatal error occured during the prepare routine
+		if(fatal==1) {message(paste("\r\n Fatal Error Occured While Preparing Unit",unit$unit))} # Report if a fatal error occured during the prepare routine
 		
 		## Extract stand and tree level warnings and errors from the prepare subroutine
 		flags$stand$exists[flags$stand$routine=="prepare"] <- c(prepared[[16]],prepared[[18]])
@@ -784,7 +810,7 @@ grow <- function( InputList ) {
 				CYCLG = k # Update the value of cycles grown so far
 			}	
 			
-			if(fatal==1) {message(paste("Fatal error occured while growing unit",unit$unit))} # Report if a fatal error occured during the growth routine
+			if(fatal==1) {message(paste("\r\n Fatal error occured while growing unit",unit$unit))} # Report if a fatal error occured during the growth routine
 			
 			executed = executed[!is.na(executed$period),] ## Recalling that maximum possible matrix space was added to place grown tree values, reduce to populated rows
 			
@@ -954,7 +980,7 @@ grow <- function( InputList ) {
 		dyn.unload(ORGEDIT) # Unload the prepare subroutine
 		
 		fatal = prepared[[19]] # Check if a fatal error occured while processing the sample
-		if(fatal==1) {message(paste("Fatal Error Occured While Preparing Unit",unit$unit))} # Report if a fatal error occured during the prepare routine
+		if(fatal==1) {message(paste("\r\n Fatal Error Occured While Preparing Unit",unit$unit))} # Report if a fatal error occured during the prepare routine
 		
 		## Extract stand and tree level warnings and errors from the prepare subroutine
 		flags$stand$exists[flags$stand$routine=="prepare"] <- c(prepared[[15]],prepared[[17]])
@@ -1178,7 +1204,7 @@ grow <- function( InputList ) {
 				CYCLG = k # Update the value of cycles grown so far
 			}	
 			
-			if(fatal==1) {message(paste("Fatal Error Occured While Growing Unit",unit$unit))} # Report if a fatal error occured during the growth routine
+			if(fatal==1) {message(paste("\r\n Fatal Error Occured While Growing Unit",unit$unit))} # Report if a fatal error occured during the growth routine
 			
 			executed = executed[!is.na(executed$period), ] ## Recalling that maximum possible matrix space was added to place grown tree values, reduce to populated rows
 			
@@ -1308,190 +1334,222 @@ grow <- function( InputList ) {
 	}
 	
 	## Create and initialize a progress bar to track processing of samples
+	fatal = 0 # Indicator for fatal errors initialized to zero
 	T = nrow(units) + 1 # The total number of orders to tick by
 	t = 1 # The minor unit of the progress bar
 	Progress <- txtProgressBar(min=0, max=T, style=3)
 	
-	## Grow each unit in Organon, or Cipsanon, and iteratively tick up progress bar
-	cipsr.out = lapply(units$unit,function(x){
-				setTxtProgressBar(Progress,t) # Update the progress bar
+	# Preallocate space (to a vector) which should contain information from all the simulations
+	cipsr.out = vector(mode="list",length=nrow(units)) 
 	
-				## Route to the correct CIPSR model: Organon (1) or Cipsanon (2)
-				if(units$model[units$unit==x]==1) {							
-					out = .organon(subset(samples,unit==x),unit=subset(units,unit==x),subset(activities,unit==x))
-				} else {
-					out = .cipsanon(subset(samples,unit==x),unit=subset(units,unit==x),subset(activities,unit==x))
-				}
+	# Grow each unit of information supplied by the user
+	lapply(units$unit,function(x){
 				
-				t <<- t+1 # Update iterator for progress and bar
+				if(fatal==1) return()
 				
-				return(out) # Return the xth units simulation information
-				
-			}
-	)
-	
-	## Isolate and combine components of the finalized cipsr output list
-	treelist = list() # Tree list is comprised of individual tree measurements
-	for(j in 1:length(units$unit)) { treelist[[j]] = cipsr.out[[j]][[1]]; cipsr.out[[j]][[1]] <- NULL } # Place into a list
-	treelist[sapply(treelist, is.null)] <- NULL # Remove fatal treelist output
-	## Reduce the expansion factors for each unit given the samples installed
-	treelist = lapply(treelist, function(x) {
-				subset(x,select=-c(sample)) # Remove the sample index
-				x # Return updated list elements
-			}
-	)
-	
-	## Calculate sample levels summary attributes at the period and subperiod level 
-	samplelist = lapply(treelist, function(periods) {
-				subperiods = split(periods,paste(periods$period,periods$subperiod))	
-				out = lapply(subperiods, function(x) {
-							n = nrow(x) # The number of trees in the sample
-							model = x$model[1] # CIPSR model that was employed
-							unit = x$unit[1] # Unit index value
-							period = x$period[1] # Period of projection
-							subperiod = x$subperiod[1] # Subperiod of projection
-							stage = x$stage[1] # Stand age (years)
-							bap = sum( pi*(x$dbh/2)^2/144*x$expan) # Basal area per acre (ft2/acre)
-							tpa = sum(x$expan) # Number of trees per acre 
-							qmd = sqrt(bap/(0.005454*tpa)) # Quadradic mean diameter (in)
-							qmd[is.na(qmd)] <- 0 # NaN produced by dividing zero bap and tpa values; set zero
-							bfv = sum(x$bfv*x$expan) # Board foot per acre (scribner) 
-							cfv = sum(x$cfv*x$expan) # Cubic foot volume per acre
-							sdi = tpa*(qmd/10)^1.605 # Stand density index
-							rel = bap/(qmd^0.5) # Relative density 			
-							rel[is.na(rel)] <- 0 # Ensure, at final harvest, zero not null value
-							data.frame(model,unit,period,subperiod,stage,bap,tpa,qmd,sdi,rel,bfv,cfv)
+				# Switch to the correct cipsr model: Organon 1., Cipsanon 2.	
+				out = switch(as.character(units$model[units$unit==x]),
+						"1"={
+							.organon(subset(samples,unit==x),unit=subset(units,unit==x),subset(activities,unit==x))
+						},
+						"2"={
+							.cipsanon(subset(samples,unit==x),unit=subset(units,unit==x),subset(activities,unit==x))
 						}
 				)
-				out = do.call("rbind",out) # Bind into a data frame
-				out[order(out$unit,out$period,out$subperiod),] # Order for clarity
-			}
-	)
-	samplelist=do.call("rbind",samplelist) # Bind into a data frame
-	
-	## Finalize tree list output
-	treelist = do.call("rbind",treelist) # Bind the list into a data frame
-	treelist = treelist[order(treelist$unit,treelist$period,treelist$subperiod),] # Order for clarity
-	
-	## Finalize wood quality output
-	woodquality = list() # The wood quality list is comprised of individual tree and branch level measurements 
-	for(j in 1:length(units$unit)) { woodquality[[j]] = cipsr.out[[j]][[1]]; cipsr.out[[j]][[1]] <- NULL  } # Place into a list
-	woodquality[sapply(woodquality, is.null)] <- NULL # Remove fatal treelist output; or where output was not specified
-	woodquality = do.call("rbind",woodquality) # Bind the list into a data frame	
-	
-	## Finalize stand and tree level flag output	
-	standflags = list() # Stand level flags list comprised of unit specific messages
-	for(j in 1:length(units$unit)) { standflags[[j]] = cipsr.out[[j]][[1]]; cipsr.out[[j]][[1]] <- NULL } # Place into a list
-	standflags = do.call("rbind",standflags) # Bind the list into a data frame
-	treeflags = list() # Tree level flags list comprised of unit specific messages
-	for(j in 1:length(units$unit)) { treeflags[[j]] = cipsr.out[[j]][[1]]; cipsr.out[[j]][[1]] <- NULL } # Place into a list
-	treeflags = do.call("rbind",treeflags) # Bind the list into a data frame
-	
-	rm(cipsr.out); gc() # Remove object; garbage collection
-	
-	## Process user requested plots
-	if(any(units$wantplot==1|units$wantplot==2)) {
-		
-		## A data frame of information used to create a series of plots 
-		plotinf = data.frame(heads=c("Basal Area Per Acre","Trees per Acre","Quadradic Mean Diameter","Stand Density Index","Relative Density",
-						"Scribner Volume","Cubic Foot Volume"),labs=c("Square Feet per Acre","Number of Trees per Acre","Inches","Reinke's Stand Density Index",
-						"Percentage","Board feet per acre","Cubic feet per acre"),gets=c("bap","tpa","qmd","sdi","rel","bfv","cfv")) 
-		
-		## If any plots should be displayed on the screen apply the following procedure
-		if(any(units$wantplot==1)){
-			## Process plots to be printed on the screen
-			drawdat = samplelist[samplelist$unit %in% units$unit[units$wantplot==1],] # Subset to data for 'screen printing'
 			
-			## Print a series of plots on the screen
-			sapply(as.character(plotinf$gets),function(i){
-						y = drawdat[[i]] # The response variable
-						x = drawdat$stage # The stand age
-						# Create a blank plot, and draw lines by the unit
-						par(mar=c(5.1, 4.1, 4.1, 8.1)) # Create a plot with sufficient room for a legend
-						plot(x,y,type="n",main=plotinf$heads[plotinf$gets==i],ylab=plotinf$labs[plotinf$gets==i],xlab="Stand Age (Years)") # Draw a blank plot  
-						df = split(drawdat,drawdat$unit) # Split the data up by units to draw lines for each attribute 
-						df = df[unlist(lapply(df, nrow)!=0)] # Constrain to unit elements in the list with values; those with wantplot equal one
-						par(xpd=TRUE) # Allow for plotting in the margins
-						## Limit the legend based on the number of lines (greater than eight, legend irrelevant)
-						if(nrow(units[units$wantplot==1,])<8){
-							legend("topright",inset=c(-0.25,0),names(df),lty=1:length(unique(drawdat$unit)),title="Units",cex=1.2) # Inset a legend 
-						}
-						# Split up the drawing data by unit
-						lapply(df,function(z){
-									dash = match(unique(z$unit),unique(drawdat$unit)) # Use position in unique units to get line and point type
-									lines(z$stage,z[[i]],lty=dash)	# Draw attribute of interest by period of projection
-								}
-						)
-						par(ask=TRUE) # Ask to advance through plots
-					}
-			)
-			par(ask=FALSE) # Turn off 'asking' for plots to advance
-		}
-		
-		## If any plots should be printed into a directory, apply the following procedure
-		if(any(units$wantplot==2)){
-			
-			## Process plots to be printed into a directory
-			dir.create(paste(home,"My Output",sep="/"),showWarnings=FALSE) # Create a directory for printing
-			printdat = samplelist[samplelist$unit %in% units$unit[units$wantplot==2],] # Subset to data for 'directory printing'
-			## Print a series of plots to the output directory
-			sapply(as.character(plotinf$gets),function(i){
-						y = printdat[[i]] # The response variable
-						x = printdat$stage # The stand age
-						# Create a blank plot, and draw lines by the unit
-						bmp(paste(home,"/My Output/",i,".bmp",sep=""),width=7.25,height=5.25,units="in",res=150)
-						par(mar=c(5.1, 4.1, 4.1, 8.1)) # Create a plot with sufficient room for a legend
-						plot(x,y,type="n",main=plotinf$heads[plotinf$gets==i],ylab=plotinf$labs[plotinf$gets==i],xlab="Stand Age (Years)")  
-						df = split(printdat,printdat$unit) # Split the data up by units to draw lines for each attribute 
-						df = df[unlist(lapply(df, nrow)!=0)] # Constrain to unit elements in the list with values; those with wantplot equal two
-						par(xpd=TRUE) # Allow for plotting in the margins
-						## Limit the legend based on the number of lines (greater than eight, legend irrelevant)
-						if(nrow(units[units$wantplot==2,])<8){
-							legend("topright",inset=c(-0.25,0),names(df),lty=1:length(unique(printdat$unit)),title="Units",cex=1.2) # Inset a legend 
-						}
-						# Split up the drawing data by unit
-						lapply(df,function(z){
-									dash = match(unique(z$unit),unique(printdat$unit)) # Use position in unique units to get line and point type
-									lines(z$stage,z[[i]],lty=dash)	# Draw attribute of interest by period of projection
-								}
-						)
-						dev.off() # Close the device to 'print' the next in the output directory 
-					}
-			)
-		}
-		
-		graphics.off() # Ensure that all graphical devices have been turned off	
-	}	
-	
-	## Combine the final amalgamated data frames into a finalized list
-	cipsr.out = list(treelist=treelist,samplelist=samplelist,woodquality=woodquality,standflags=standflags,treeflags=treeflags) # Combine output information into a list
-	cipsr.out = lapply(cipsr.out, function(x) {
-				row.names(x)<-NULL; # Remove row names generated during splitting
-				x[sapply(x,is.numeric)] <- round(x[sapply(x,is.numeric)],2); # Round to two decimal places 
-				return(x) # Return the finalized object
+				cipsr.out[[t]] <<- out # Supply output to preallocated vector space 
+				rm(out); gc() # Manually drop and dump memory from the simulation
+				
+				
+				# Check for memory issues: could be problematic with big data! 			
+				if(object.size(cipsr.out)*1.0e-6 > 1000 | memory.size()/memory.limit() > 0.90 ){
+					# If nearly all memory allocated to R is used (or some ot: halt simulation
+					fatal <<- 1 # Indicator for a fatal error
+					return(message("\r\n R Memory Limit Almost Reached: Big data solutions given in the vignette documentation"))
+				}	
+				
+				
+				setTxtProgressBar(Progress,t) # Report the progress in simulation
+				t <<- t+1 # Update iterator for progress and bar and list position
+								
 			}
 	)
 	
-	cipsr.out[[1]] = subset(cipsr.out[[1]],select=-c(sample)) # Now a giant sample, thus, identifier is not relevant 
-	
-	## If output tables are requested by the user, process them
-	if(any(units$wanttable==1)){
-		# Subset spreadsheet output to just those tables requested by the user
-		spreadout = lapply(cipsr.out,function(x){
-					x[x$unit %in% units$unit[units$wanttable==1],]
+	# Provided there were no fatal errors in the simulation procedure, proceed to finalize output
+	if(fatal==0){
+
+		## Isolate and combine components of the finalized cipsr output list
+		treelist = list() # Tree list is comprised of individual tree measurements
+		for(j in 1:length(units$unit)) { treelist[[j]] = cipsr.out[[j]][[1]]; cipsr.out[[j]][[1]] <- NULL } # Place into a list
+		treelist[sapply(treelist, is.null)] <- NULL # Remove fatal treelist output
+		## Reduce the expansion factors for each unit given the samples installed
+		treelist = lapply(treelist, function(x) {
+					subset(x,select=-c(sample)) # Remove the sample index
+					x # Return updated list elements
 				}
 		)
 		
-		## If an output directory exists, write to it, else create one
-		if(!file.exists(paste(home,"My Output",sep="/"))){dir.create(paste(home,"My Output",sep="/"),showWarnings=FALSE)}
+		## Calculate sample levels summary attributes at the period and subperiod level 
+		samplelist = lapply(treelist, function(periods) {
+					subperiods = split(periods,paste(periods$period,periods$subperiod))	
+					out = lapply(subperiods, function(x) {
+								n = nrow(x) # The number of trees in the sample
+								model = x$model[1] # CIPSR model that was employed
+								unit = x$unit[1] # Unit index value
+								period = x$period[1] # Period of projection
+								subperiod = x$subperiod[1] # Subperiod of projection
+								stage = x$stage[1] # Stand age (years)
+								bap = sum( pi*(x$dbh/2)^2/144*x$expan) # Basal area per acre (ft2/acre)
+								tpa = sum(x$expan) # Number of trees per acre 
+								qmd = sqrt(bap/(0.005454*tpa)) # Quadradic mean diameter (in)
+								qmd[is.na(qmd)] <- 0 # NaN produced by dividing zero bap and tpa values; set zero
+								bfv = sum(x$bfv*x$expan) # Board foot per acre (scribner) 
+								cfv = sum(x$cfv*x$expan) # Cubic foot volume per acre
+								sdi = tpa*(qmd/10)^1.605 # Stand density index
+								rel = bap/(qmd^0.5) # Relative density 			
+								rel[is.na(rel)] <- 0 # Ensure, at final harvest, zero not null value
+								data.frame(model,unit,period,subperiod,stage,bap,tpa,qmd,sdi,rel,bfv,cfv)
+							}
+					)
+					out = do.call("rbind",out) # Bind into a data frame
+					out[order(out$unit,out$period,out$subperiod),] # Order for clarity
+				}
+		)
+		samplelist=do.call("rbind",samplelist) # Bind into a data frame
 		
-		## Write the user-specified output to the output directory
-		writeWorksheetToFile(paste(home,"My Output/cips_output.xls",sep="/"),data=spreadout,
-				sheet=c("treelist","samplelist","woodquality","standflags","treeflags"))			
+		## Finalize tree list output
+		treelist = do.call("rbind",treelist) # Bind the list into a data frame
+		treelist = treelist[order(treelist$unit,treelist$period,treelist$subperiod),] # Order for clarity
+		
+		## Finalize wood quality output
+		woodquality = list() # The wood quality list is comprised of individual tree and branch level measurements 
+		for(j in 1:length(units$unit)) { woodquality[[j]] = cipsr.out[[j]][[1]]; cipsr.out[[j]][[1]] <- NULL  } # Place into a list
+		woodquality[sapply(woodquality, is.null)] <- NULL # Remove fatal treelist output; or where output was not specified
+		woodquality = do.call("rbind",woodquality) # Bind the list into a data frame	
+		
+		## Finalize stand and tree level flag output	
+		standflags = list() # Stand level flags list comprised of unit specific messages
+		for(j in 1:length(units$unit)) { standflags[[j]] = cipsr.out[[j]][[1]]; cipsr.out[[j]][[1]] <- NULL } # Place into a list
+		standflags = do.call("rbind",standflags) # Bind the list into a data frame
+		treeflags = list() # Tree level flags list comprised of unit specific messages
+		for(j in 1:length(units$unit)) { treeflags[[j]] = cipsr.out[[j]][[1]]; cipsr.out[[j]][[1]] <- NULL } # Place into a list
+		treeflags = do.call("rbind",treeflags) # Bind the list into a data frame
+		
+		rm(cipsr.out); gc() # Remove object; garbage collection
+		
+		## Process user requested plots
+		if(any(units$wantplot==1|units$wantplot==2)) {
+			
+			## A data frame of information used to create a series of plots 
+			plotinf = data.frame(heads=c("Basal Area Per Acre","Trees per Acre","Quadradic Mean Diameter","Stand Density Index","Relative Density",
+							"Scribner Volume","Cubic Foot Volume"),labs=c("Square Feet per Acre","Number of Trees per Acre","Inches","Reinke's Stand Density Index",
+							"Percentage","Board feet per acre","Cubic feet per acre"),gets=c("bap","tpa","qmd","sdi","rel","bfv","cfv")) 
+			
+			## If any plots should be displayed on the screen apply the following procedure
+			if(any(units$wantplot==1)){
+				## Process plots to be printed on the screen
+				drawdat = samplelist[samplelist$unit %in% units$unit[units$wantplot==1],] # Subset to data for 'screen printing'
+				
+				## Print a series of plots on the screen
+				sapply(as.character(plotinf$gets),function(i){
+							y = drawdat[[i]] # The response variable
+							x = drawdat$stage # The stand age
+							# Create a blank plot, and draw lines by the unit
+							par(mar=c(5.1, 4.1, 4.1, 8.1)) # Create a plot with sufficient room for a legend
+							plot(x,y,type="n",main=plotinf$heads[plotinf$gets==i],ylab=plotinf$labs[plotinf$gets==i],xlab="Stand Age (Years)") # Draw a blank plot  
+							df = split(drawdat,drawdat$unit) # Split the data up by units to draw lines for each attribute 
+							df = df[unlist(lapply(df, nrow)!=0)] # Constrain to unit elements in the list with values; those with wantplot equal one
+							par(xpd=TRUE) # Allow for plotting in the margins
+							## Limit the legend based on the number of lines (greater than eight, legend irrelevant)
+							if(nrow(units[units$wantplot==1,])<8){
+								legend("topright",inset=c(-0.25,0),names(df),lty=1:length(unique(drawdat$unit)),title="Units",cex=1.2) # Inset a legend 
+							}
+							# Split up the drawing data by unit
+							lapply(df,function(z){
+										dash = match(unique(z$unit),unique(drawdat$unit)) # Use position in unique units to get line and point type
+										lines(z$stage,z[[i]],lty=dash)	# Draw attribute of interest by period of projection
+									}
+							)
+							par(ask=TRUE) # Ask to advance through plots
+						}
+				)
+				par(ask=FALSE) # Turn off 'asking' for plots to advance
+			}
+			
+			## If any plots should be printed into a directory, apply the following procedure
+			if(any(units$wantplot==2)){
+				
+				## Process plots to be printed into a directory
+				dir.create(paste(home,"My Output",sep="/"),showWarnings=FALSE) # Create a directory for printing
+				printdat = samplelist[samplelist$unit %in% units$unit[units$wantplot==2],] # Subset to data for 'directory printing'
+				## Print a series of plots to the output directory
+				sapply(as.character(plotinf$gets),function(i){
+							y = printdat[[i]] # The response variable
+							x = printdat$stage # The stand age
+							# Create a blank plot, and draw lines by the unit
+							bmp(paste(home,"/My Output/",i,".bmp",sep=""),width=7.25,height=5.25,units="in",res=150)
+							par(mar=c(5.1, 4.1, 4.1, 8.1)) # Create a plot with sufficient room for a legend
+							plot(x,y,type="n",main=plotinf$heads[plotinf$gets==i],ylab=plotinf$labs[plotinf$gets==i],xlab="Stand Age (Years)")  
+							df = split(printdat,printdat$unit) # Split the data up by units to draw lines for each attribute 
+							df = df[unlist(lapply(df, nrow)!=0)] # Constrain to unit elements in the list with values; those with wantplot equal two
+							par(xpd=TRUE) # Allow for plotting in the margins
+							## Limit the legend based on the number of lines (greater than eight, legend irrelevant)
+							if(nrow(units[units$wantplot==2,])<8){
+								legend("topright",inset=c(-0.25,0),names(df),lty=1:length(unique(printdat$unit)),title="Units",cex=1.2) # Inset a legend 
+							}
+							# Split up the drawing data by unit
+							lapply(df,function(z){
+										dash = match(unique(z$unit),unique(printdat$unit)) # Use position in unique units to get line and point type
+										lines(z$stage,z[[i]],lty=dash)	# Draw attribute of interest by period of projection
+									}
+							)
+							dev.off() # Close the device to 'print' the next in the output directory 
+						}
+				)
+			}
+			
+			graphics.off() # Ensure that all graphical devices have been turned off	
+		}	
+		
+		## Combine the final amalgamated data frames into a finalized list
+		cipsr.out = list(treelist=treelist,samplelist=samplelist,woodquality=woodquality,standflags=standflags,treeflags=treeflags) # Combine output information into a list
+		cipsr.out = lapply(cipsr.out, function(x) {
+					row.names(x)<-NULL; # Remove row names generated during splitting
+					x[sapply(x,is.numeric)] <- round(x[sapply(x,is.numeric)],2); # Round to two decimal places 
+					return(x) # Return the finalized object
+				}
+		)
+		
+		cipsr.out[[1]] = subset(cipsr.out[[1]],select=-c(sample)) # Now a giant sample, thus, identifier is not relevant 
+		
+		## If output tables are requested by the user, process them
+		if(any(units$wanttable==1)){
+			
+			# Subset spreadsheet output to just those tables requested by the user
+			spreadout = lapply(cipsr.out,function(x){
+						x[x$unit %in% units$unit[units$wanttable==1],]
+					}
+			)
+			
+			if(any(sapply(spreadout,nrow) >= 65536)){
+				
+				message("\r\n Cannot write such a large Excel file: see big data section of vignette for solutions")
+				
+			} else {
+				
+				## If an output directory exists, write to it, else create one
+				if(!file.exists(paste(home,"My Output",sep="/"))){dir.create(paste(home,"My Output",sep="/"),showWarnings=FALSE)}
+				
+				## Write the user-specified output to the output directory
+				writeWorksheetToFile(paste(home,"My Output/cips_output.xls",sep="/"),data=spreadout,
+						sheet=c("treelist","samplelist","woodquality","standflags","treeflags"))			
+				
+			}
+			
+		}
+		
+		setTxtProgressBar(Progress,T) # Finalize the progress bar 
+		return(cipsr.out) # Return the CIPS R output list		
 	}
-	
-	setTxtProgressBar(Progress,T) # Finalize the progress bar 
-	close(Progress) # Close the progress bar 
-	
-	return(cipsr.out) # Return the CIPS R output list
+		
 }	
