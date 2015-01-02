@@ -1,7 +1,7 @@
 Package: cipsr
 Type: Package
 Title: An R interface to the Organon and Cipsanon models
-Version: 2.1
+Version: 2.2
 Date: 2014-11-11
 Authors@R: as.person(c(
     "Nathaniel Osborne <nathaniel.osborne@oregonstate.edu> [aut, cre]",
