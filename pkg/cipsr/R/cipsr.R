@@ -1465,7 +1465,7 @@ grow <- function(InputList) {
 						
 						# If there are eight or less units plotted: make a legend
 						if(nrow(units[units$wantplot==1])<=8){
-							legend("topright",group,inset=c(-0.25,0),lty=1:i,col=colors,title="Unit",cex=1.2,lwd=2) 
+							legend("topright",as.character(group),inset=c(-0.30,0),lty=1:i,col=colors,title="Unit",cex=1.2,lwd=2) 
 						}
 						
 						par(ask=TRUE) # Request the user click to advance through the plots
@@ -1518,7 +1518,7 @@ grow <- function(InputList) {
 						
 						# If there are eight or less units plotted: make a legend
 						if(nrow(units[units$wantplot==1])<=8){
-							legend("topright",group,inset=c(-0.30,0),lty=1:i,col=colors,title="Unit",cex=1.2,lwd=2) 
+							legend("topright",as.character(group),inset=c(-0.30,0),lty=1:i,col=colors,title="Unit",cex=1.2,lwd=2) 
 						}
 						
 						graphics.off()
