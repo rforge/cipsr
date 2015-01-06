@@ -1494,7 +1494,7 @@ grow <- function(InputList) {
 						
 						n = length(group) # Number of units to be plotted
 						
-						colors = rainbow(n,start=0.7,end=1,v=0.8) # Array of colors for the plot
+						colors = rainbow(n,start=0.2,end=1,v=0.8) # Array of colors for the plot
 						
 						# Isolate the data to be plotted in R
 						z = subset(out$samplelist, unit %in% group)
