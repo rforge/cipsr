@@ -62,7 +62,7 @@ The \textit{cipsr} package can be downloaded and installed from a repository loc
 	\item Ensure your copy of R is version 3.0 or greater. You can download a new copy of R at http://www.r-project.org.  
 	\item Update Java on your computer (https://www.java.com).  If your computer if 64-bits, install both the 32- and 64-bit architectures. 
 	\item Open R (i386 or 64x)
-	\item install.packages("cipsr",repos="http://cips.forestry.oregonstate.edu/sites/cips/files",dependencies=TRUE)
+	\item install.packages("cipsr", repos="http://cips.forestry.oregonstate.edu/sites/cips/files", dependencies=TRUE)
 \end{enumerate}
 
 You may be asked to create a personal R directory after entering the \texttt{install.packages(...)} command.  The default personal directory for most Windows users is located in My Documents.  You can download \textit{cipsr} to any directory, provided your R session is configured correctly.\\
@@ -208,7 +208,7 @@ Some users will prefer to import their datasets for use in \textit{cipsr} from E
 	\item[dfsi] \hfill \\ 
 	Douglas-fir 50-year site index, depending on model variant. 
 	\begin{description}
-		\item[NWO] Hann and Scriviani (1987)
+		\item[NWO] Hann and Scrivani (1987)
 		\item[SWO] Bruce (1981)
 		\item[SMC] Bruce (1981) for Organon and Flewelling et al. (2001) for Cipsanon
 	\end{description}
@@ -216,7 +216,7 @@ Some users will prefer to import their datasets for use in \textit{cipsr} from E
 	Other species 50-year site-index, depending on model variant.  
 	\begin{description}
 		\item[NWO] Flewelling et al. (2001) Western hemlock
-		\item[SWO] Hann and Scriviani (1987) ponderosa pine site
+		\item[SWO] Hann and Scrivani (1987) ponderosa pine site
 		\item[SMC] Flewelling et al. (2001) Western hemlock
 	\end{description}
 	\item[dhcal] \hfill \\ 
@@ -592,6 +592,64 @@ As indicated in the commented code, we find some evidence that site-index influe
 \section{Big Data Solutions}
 The \textit{cipsr} software has been designed to handle very large forestry analysis tasks.  Still, some users may consider forestry problems which are large enough to require a customized solution. Examples are these problems are when: 90-percent of the available memory allocated to R is used; the output from a single simulation exceeds 1,000 megabytes; or if an Excel file to import or export has a least one sheet in excess of 65,536 rows.  There are many definitions for big data, but if any of the already mentioned constraints is met in \textit{cipsr}, we consider the problem one with a big data component. \\
 
-In general, big data problems can be solved in three ways.  Large problems can be reduced to smaller ones by limiting the scope of analysis, or making the analytical approach more efficient.  If the problem cannot be reduced or made more efficient, the user can increase the amount of computer memory available for analysis.  Memory can be increased in R by installing for RAM on the computer.  In R, a limit of 8 TB of RAM can be used, in the 64-bit version.  A third solution to big data problems is store objects on the hard disc and process them using RAM in chunks.  The current structure of \textit{cipsr} allows users to process large simulations in chunks, or make their analysis more efficient and smaller in scope.  An example of processing a very large dataset is given below.  
+In general, big data problems can be solved in three ways.  Large problems can be reduced to smaller ones by limiting the scope of analysis, or making the analytical approach more efficient.  If the problem cannot be reduced or made more efficient, the user can increase the amount of computer memory available for analysis.  Memory can be increased in R by installing for RAM on the computer.  In R, a limit of 8 TB of RAM can be used, in the 64-bit version.  A third solution to big data problems is store objects on the hard disc and process them using RAM in chunks.  The current structure of \textit{cipsr} allows users to process large simulations in chunks, or make their analysis more efficient and smaller in scope. Two examples given below, demonstrate processing large datasets in \textit{cipsr}.  Both example use an approach of condensing the problem to minimizing memory use, and processing time in R. 
 
+\begin{verbatim}
+# Obtain simulation data from one example unit
+dat = lapply(cipsrexam,function(x) subset(x,unit=="A"))
+dat$units$wantplot=0; dat$units$wanttable=0 
+
+# Use the single unit to produce 100 (e.g. could be 10,000) units of data
+dat = lapply(1:100,function(i){
+		out = dat # Get the template from a single unit	
+		
+		# Name the unit to be produced
+		out = sapply(out,function(x){x$unit=i;x})
+		
+		# Randomly simulate the sample level data
+		n = nrow(out$samples)
+		dbh = out$samples$dbh
+		out$samples$dbh = rnorm(n,mean(dbh),sd(dbh))
+		out$samples$tht = 0; out$samples$cr = 0
+		
+		return(out) # Return the simulated data
+	}
+)
+
+# Example 1. Extract harvest yield in chunks: keep only the necessary data
+grown = lapply(dat,function(x){
+	out = grow(x)$samplelist
+	out = subset(out,subperiod==1 | period==max(period))
+	out = aggregate(.~unit,data=out[c("unit","bfv","cfv")],FUN=sum)
+	
+	return(out)			
+	}
+)
+grown = do.call(rbind,grown)
+
+# Example 2. Extract the full array of cipsr output: constrained to final conditions
+grown = lapply(dat,function(x){
+		out = grow(x)
+		
+		# Condense data to just the final period of growth
+		out = sapply(out,function(k){
+				if("period" %in% names(k)){
+					k = subset(k,period==max(period))
+				}
+				return(k)
+			}
+		)
+		
+		return(out)		
+	}
+)
+
+grown = do.call(Map,c(rbind,grown)) # Make the list-of-lists one list
+\end{verbatim}
+
+\nocite{}
+\baselineskip=10pt
+\bibliographystyle{apalike}
+\bibliography{references}
+	
 \end{document}

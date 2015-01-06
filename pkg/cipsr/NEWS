@@ -1,0 +1,14 @@
+THIS IS THE CHANGELOG OF THE "cipsr" PACKAGE
+
+CHANGES IN VERSION 2.2
+
+* Vignette was updated with solutions for big data problems
+
+* More effective R code was written to handle output from Organon and Cipsanon
+
+* General debugging of a few user-reported issues
+
+* Vignette renamed to "introduction": this change may cause some issues for a few users relying 
+on older instructions.  Best to use help(package="cipsr") moving forward.
+
+
