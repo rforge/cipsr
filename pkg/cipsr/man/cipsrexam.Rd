@@ -98,6 +98,7 @@ represents are described below, but in much greater detail within the \code{cips
 \seealso{
 \code{\link{load.data}}
 \code{\link{grow}}
+\code{\link{get.template}}
 }
 
 \keyword{

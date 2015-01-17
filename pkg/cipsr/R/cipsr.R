@@ -48,7 +48,7 @@ get.template <- function(){
 }
 
 ## Function: Runs Organon and Cipsanon models in R  
-grow <- function(InputList) {
+grow <- function(InputList,ProgressBar=TRUE) {
 	
 	# Identify directories used when running the program
 	home = getwd() # User workspace
@@ -76,7 +76,7 @@ grow <- function(InputList) {
 	)
 
 	spat = paste(root,"spat",sep="/") # Geospatial files
-	warn = paste(root,"warn",sep="/") # Error message files
+	tabs = paste(root,"tabs",sep="/") # Error message files
 	
 	# Delete the old output file, if it exists so chaos does not reign!
 	if(file.exists(paste(home,"My Output",sep="/"))) unlink(paste(home,"My Output",sep="/"), recursive=TRUE)
@@ -89,6 +89,7 @@ grow <- function(InputList) {
 	# Extract and clean data from the input list
 	invisible(lapply(c("samples","units","activities"),function(x) {
 					out = with(InputList,get(x)) # Get a sheet from the input dataset
+					out[] <- lapply(out,function(i) if(is.factor(i)){i=as.character(i)} else {i}) # Convert any factors to characters
 					InputList[[which(names(InputList)==x)]] <<- NULL # Delete information from list
 					out = out[complete.cases(out),] # Ensure the list is complete across all rows
 					assign(x,out,envir=parent.env(environment())) # Assign the individual list component in the working directory
@@ -530,7 +531,7 @@ grow <- function(InputList) {
 		n = nrow(sample) # Number of trees in the composite sample
 		
 		## Load possible errors for the Cipsanon DLL's
-		flags = read.csv(paste(warn,"flags.csv",sep="/")) # Read the table into R
+		flags = read.csv(paste(tabs,"flags.csv",sep="/")) # Read the table into R
 		flags = split(flags,flags$level) # Split up by stand and tree level errors
 		flags$stand$exists = 0 # Assume that stand level errors do not exist 
 		## Reformat tree level errors given sample size dimensions assuming no errors exist
@@ -952,7 +953,7 @@ grow <- function(InputList) {
 		n = nrow(sample) # Number of trees in the composite sample
 		
 		## Errors can occur when running Organon; load the possible error table
-		flags = read.csv(paste(warn,"flags.csv",sep="/")) # Read the table into R
+		flags = read.csv(paste(tabs,"flags.csv",sep="/")) # Read the table into R
 		flags = split(flags,flags$level) # Split up by stand and tree level errors
 		flags$stand$exists = 0 # Assume that stand level errors do not exist 
 		## Reformat tree level errors given sample size dimensions assuming no errors exist
@@ -1345,7 +1346,7 @@ grow <- function(InputList) {
 	fatal = 0 # Indicator for fatal errors initialized to zero
 	T = nrow(units) + 1 # The total number of orders to tick by
 	t = 1 # The minor unit of the progress bar
-	Progress <- txtProgressBar(min=0, max=T, style=3)
+	if(ProgressBar) Progress <- txtProgressBar(min=0, max=T, style=3)
 	
 	# Preallocate space (to a vector) which should contain information from all the simulations
 	out = vector(mode="list",length=nrow(units)) 
@@ -1375,7 +1376,7 @@ grow <- function(InputList) {
 					return(message("\r\n R Memory limit almost reached: big data solutions given in the vignette documentation"))
 				}	
 				
-				setTxtProgressBar(Progress,t) # Report the progress in simulation
+				if(ProgressBar) setTxtProgressBar(Progress,t) # Report the progress in simulation
 				t <<- t+1 # Update iterator for progress and bar and list position
 								
 			}
@@ -1579,7 +1580,7 @@ grow <- function(InputList) {
 			}
 	)
 	
-	setTxtProgressBar(Progress,T) # Finalize the progress bar 
+	if(ProgressBar) setTxtProgressBar(Progress,T) # Finalize the progress bar 
 	return(out) # Return the CIPS R output list		
 	
 }	

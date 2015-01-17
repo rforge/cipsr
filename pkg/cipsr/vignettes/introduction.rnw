@@ -15,6 +15,27 @@
 \usepackage{amsmath}
 \usepackage{upgreek}
 
+\usepackage{listings,relsize}
+\lstloadlanguages{R}
+\lstdefinelanguage{Renhanced}[]{R}{%
+	morekeywords={acf,ar,arima,arima.sim,colMeans,colSums,is.na,is.null,%
+		mapply,ms,na.rm,nlmin,replicate,row.names,rowMeans,rowSums,seasonal,%
+		sys.time,system.time,ts.plot,which.max,which.min},
+	deletekeywords={c},
+	alsoletter={.\%},%
+	alsoother={:_\$}}
+
+\lstset{language=Renhanced,extendedchars=true,
+	basicstyle=\small\ttfamily,
+	commentstyle=\textsl,
+	keywordstyle=\mdseries,
+	showstringspaces=false,
+	breaklines=true,
+	index=[1][keywords],
+	indexstyle=\indexfonction}
+
+\newcommand{\indexfonction}[1]{\index{#1@\texttt{#1}}}
+
 \title{An R Interface to Organon and Cipsanon: \texttt{cipsr}}
 
 \author{
@@ -71,6 +92,10 @@ Provided \textit{cipsr} was properly installed, it can now be loaded.  To load \
 
 \section{Structure of the Input}
 Many users will find formatting data to be the most challenging aspect of using \textit{cipsr}.  Datasets used in \textit{cipsr} have a very specific format.  A given dataset should have a list of samples, units and activities.  The samples component of a list contains individual tree information.  In the units component, specifications for the simulation are defined as well as attributes of the forest unit.  The activities component prescribes silvicultural activities to be imposed on each unit, like fertilization or thinning. An R list \texttt{cipsrexam}, is provided after loading \textit{cipsr} as an example.  In the code below, the first few rows of \texttt{cipsrexam} are shown: \\
+
+<<<eval=TRUE,echo=FALSE>>=
+options(width=65)
+@
 
 <<<eval=TRUE,echo=TRUE>>=
 library(cipsr) 
@@ -341,16 +366,16 @@ Some users will prefer to import their datasets for use in \textit{cipsr} from E
 \end{description}
 
 \section{Growth, Yield and Quality}
-An interface to the Organon and Cipsanon models is provided in \textit{cipsr} by calling a series of dynamic link library (DLL) files.  Each DLL file is compiled from Fortran source code specific to the Organon or Cipsanon model.  A list DLL files used and distributed in \textit{cipsr} is as follows. 
+An interface to the Organon and Cipsanon models is provided in \textit{cipsr} by calling a series of dynamic link library (DLL) files.  Each DLL file is compiled from Fortran source code specific to the Organon or Cipsanon model.  A list DLL files used and distributed in \textit{cipsr} is given below.  These DLL files may be found in the libs folder of the \textit{cipsr} package: path.package("cipsr") compiled as 32-bits and 64-bits for the Windows operating system. 
 
 \begin{description}
-	\item[ORGEDIT] Imputation of missing information and calibration
-	\item[ORGRUN] Growth on a 5-year time step
-	\item[ORGVOL] Cubic and Scribner volume yield 
-	\item[ORGWQ] Wood quality attributes from thinning and final harvest
-	\item[CIPSEDIT] Imputation of missing information and calibration
-	\item[CIPSRUN] Growth on a 1-year time step
-	\item[CIPSVOL] Cubic and Scribner volume yield 
+	\item[ORGEDIT.dll] Imputation of missing information and calibration
+	\item[ORGRUN.dll] Growth on a 5-year time step
+	\item[ORGVOL.dll] Cubic and Scribner volume yield 
+	\item[ORGWQ.dll] Wood quality attributes from thinning and final harvest
+	\item[CIPSEDIT.dll] Imputation of missing information and calibration
+	\item[CIPSRUN.dll] Growth on a 1-year time step
+	\item[CIPSVOL.dll] Cubic and Scribner volume yield 
 \end{description}
 
 \begin{figure}[!ht]
@@ -360,7 +385,69 @@ An interface to the Organon and Cipsanon models is provided in \textit{cipsr} by
 	\label{fig:fig1}
 \end{figure}
 
-In \textit{cipsr}, each unit of data (i.e. in samples, units and activities) is processed by either the Organon or Cipsanon DLL files (Fig 1.)  First, missing information in the samples sheet--like total heights or crown ratios--are imputed by an EDIT DLL.  Next, each unit is grown to a certain age (defined by the \textit{groyrs} field in the units sheet) by a RUN DLL.  Silvicultural activities (prescribed in the activities sheet) are imposed during the simulation if their triggering conditions are satisfied by a treatment algorithm embedded in the \textit{grow} function.  If a thinning is applied, a call to estimate wood quality attributes will be made by a WQ subroutine.  With or without thinning, a call to estimate wood quality attributes will be made at the end of the simulation when a final harvest is assumed.  After all units from the input dataset are processed, a few basic stand level statistics are calculated (e.g. \textit{bap} basal area per acre, \textit{rel} relative density). After these attributes are calculated, descriptive plots and an Excel spreadsheet may be created upon the user’s request.        
+In \textit{cipsr}, each unit of data (i.e. in samples, units and activities) is processed by either the Organon or Cipsanon DLL files (Fig 1.)  First, missing information in the samples sheet--like total heights or crown ratios--are imputed by an EDIT DLL.  Next, each unit is grown to a certain age (defined by the \textit{groyrs} field in the units sheet) by a RUN DLL.  Silvicultural activities (prescribed in the activities sheet) are imposed during the simulation if their triggering conditions are satisfied by a treatment algorithm embedded in the \textit{grow} function.  If a thinning is applied, a call to estimate wood quality attributes will be made by a WQ subroutine.  With or without thinning, a call to estimate wood quality attributes will be made at the end of the simulation when a final harvest is assumed.  After all units from the input dataset are processed, a few basic stand level statistics are calculated (e.g. \textit{bap} basal area per acre, \textit{rel} relative density). After these attributes are calculated, descriptive plots and an Excel spreadsheet may be created upon user request.
+
+\subsection{Examples of Using the Grow Function}
+A few examples of using the function \textit{grow} are given below. \\
+
+\noindent
+\textbf{Example 1.} In this example, we acquire the \textit{cipsr} template.  The template is then loaded into R, and passed to the \textit{grow} function. 
+\begin{lstlisting}
+library(cipsr)
+get.template()
+dat = load.data("CIPSREXAM.xls") 
+grown = grow(dat) 
+\end{lstlisting}
+
+\noindent
+\textbf{Example 2.} In this example we use the already loaded \textit{cipsrexam} object.  This object is identical to the Excel template one can obtain using \textit{get.template}.  After renaming the \textit{cipsrexam} object to something more meaningful, we remove all of the silvicultural activities planned in the activities sheet.  After these minor changes to \textit{cipsrexam}, we pass the database to the \textit{grow} function.
+\begin{lstlisting}
+library(cipsr) 
+dat = cipsrexam 
+dat$activities = dat$activities[0,] 
+grown = grow(dat, ProgressBar=FALSE) 
+\end{lstlisting}
+
+\noindent
+\textbf{Example 3.} In this example, we load the \textit{cipsrexam} object and rename it.  After renaming the object, we completely replace the activities sheet with a single silvicultural treatment.  The silvicultural treatment in this case is to remove 0.45-percent of the SDI of unit A from below whenever the SDI exceeds or equals 280.  A modification is also made the units sheet of the input.  Plots are to be drawn in R only for unit A. After growing the \textit{dat} object, we subset output to unit A and only examine the behavior of SDI over time. 
+\begin{lstlisting}
+library(cipsr)
+dat = cipsrexam
+dat$activities = data.frame(unit="A", trigger="sdi", when=280, what="thin", how="below", metric="prop", target=0.45)
+dat$units$wantplot = with(dat$units, ifelse(unit=="A",1,0))
+grown = grow(dat)
+subset(grown$samplelist, unit=="A", select=c(unit,subperiod,sdi))
+\end{lstlisting}
+
+\noindent
+\textbf{Example 4.} The objective of this example was to demonstrate applying a thinning triggered by a unit condition only one time.  You will note that this is generally not the specification for thinning in \textit{cipsr}, except for thinning triggered by a year or user-code.  There are several steps in this analysis, but the general approach can be broken into two parts.  First, units are grown with no silvicultural treatment.  The year when thinning should be applied is found based on the output resulting from this simulation.  Those years for treatment after passes into an object \textit{dat}, along with a complete thinning prescription.  The stand is then grown, with a thinning imposed only one time.  
+\begin{lstlisting}
+library(cipsr)
+dat = cipsrexam
+dat$activities = dat$activities[0,]
+
+grown = grow(dat)$samplelist
+when = lapply(split(grown,grown$unit), function(x){
+		when = x$stage[min(which(x$rel>=50))] 
+		out = subset(x, stage==when, select=c(unit,stage)) 
+		names(out)[names(out)=="stage"] <- "when" 
+		return(out)
+	}
+)
+when = do.call("rbind",when)
+
+when = merge(when, data.frame(trigger="year", what="thin", how="below", metric="rel", target=35))
+
+dat$activities = when 
+dat$units$wantplot = 1 
+grown = grow(dat)$samplelist 
+
+by(grown,grown$unit,function(x){
+		k = with(x, which(subperiod==1 & stage!=max(stage)))
+		x[sort(c(k,k+1), decreasing=TRUE),]
+	} 
+)
+\end{lstlisting}
 
 \section{Structure of the Output}
 \paragraph{Tabular Output}
@@ -537,104 +624,132 @@ The remaining values of \textit{treeflags} relate to improper specification of v
 \section{Post-Processing Output}
 One of the greatest strengths of \textit{cipsr} is the statistical programming environment it is built upon.  Almost any forestry analysis can be completed using the base packages of R.  If you cannot find a solution in the base packages supplied in R, there are thousands of user-contributed packages (through CRAN and elsewhere) that help you meet an analysis goal.  That goal could be to explore the development of one, ten or ten-thousand units of forestland. \\
 
-A simple example of calling the \texttt{grow} function in \textit{cipsr} and post-processing the output is given below. In this example, we simulate the growth and development of trees in the \texttt{cipsrexam} database up to 100-years stand age.  With this information, we then compute the total harvest of Scribner and cubic volume among each unit.  The final analysis step is to fit a linear model where the response is cubic volume at final felling, and the dependent variable is site index. \\
+A simple example of calling the \texttt{grow} function in \textit{cipsr} and post-processing the output is given below. In this example, we simulate the growth and development of trees in the \texttt{cipsrexam} database up to 100-years stand age.  With this information, we then compute the total harvest of Scribner and cubic volume among each unit.  The final analysis step is to fit a linear model where the response is cubic volume at final felling, and the dependent variables are the site-index and number of harvests taken from each unit.  The purpose of this spurious analysis is demonstration - biometrics can wait for your analysis in \textit{cipsr}. \\
 
-To start our analysis we must first modify the model specifications in \texttt{cipsrexam}.
-
-<<<eval=TRUE,echo=TRUE>>=
+<<<eval=TRUE,echo=FALSE>>=
+# Post-processing example
 library(cipsr)
+dat = cipsrexam
+dat$units$groyrs=100-dat$units$stage
+dat$units$model=2
+dat$units$variant=ifelse(dat$units$unit %in% c(2,13),1,3) 
 
-# Specify all units are grown to 100-years stand age
-cipsrexam$units$groyrs  = 100 - cipsrexam$units$stage
-
-# Specify to use the Cipsanon model
-cipsrexam$units$model = 2
-
-# Specify that some units use SWO variant and SMC for others
-cipsrexam$units$variant = ifelse(cipsrexam$units$unit %in% c(2,13),1,3)  
-
-# Exclude one unit from the analysis 
-cipsrexam = lapply(cipsrexam,function(x){
+dat = lapply(dat,function(x){
 x = subset(x,unit!="12")
 return(x)
 }
 )
 
-# Do not impose any silvicultural activities 
-cipsrexam$activities <- cipsrexam$activities[0,]
+dat$units$driver = 0
+dat$units$woodqual = 0 
+dat$units$wantplot = 0; dat$units$wanttable = 0
+grown = grow(dat,ProgressBar=FALSE)$samplelist
 
-# Use the traditional site index 
-cipsrexam$units$driver = 0
-
-# Do not estimate wood quality attributes for this run
-cipsrexam$units$woodqual = 0 
-
-# Do not produce any graphs or tables
-cipsrexam$units$wantplot = 0; cipsrexam$units$wanttable = 0
+yield = subset(grown,stage==100 & subperiod==0 | stage!=100 & subperiod==1, select=c(unit,cfv,bfv,subperiod))
+yield = aggregate(.~unit,data=yield,FUN=sum)
+names(yield)[names(yield)=="subperiod"] <- "harvests"
+yield = merge(yield, subset(dat$units,select=c(unit,dfsi)))
+model = aov(cfv~dfsi+harvests,data=yield)
 @
 
-Now that \texttt{cipsrexam} has been modified for the goals of our analysis, we can call the \texttt{grow} function of \textit{cipsr}.  With the output from \texttt{grow} we can calculate the final yield of each unit and use that information in a simple linear model.
+\noindent
+To start our analysis we must first modify the model specifications in \texttt{cipsrexam}.
+
+\begin{lstlisting}
+library(cipsr)
+dat = cipsrexam
+dat$units$groyrs=100-dat$units$stage
+dat$units$model=2
+dat$units$variant=ifelse(dat$units$unit %in% c(2,13),1,3) 
+
+dat = lapply(dat,function(x){
+		x = subset(x,unit!="12")
+		return(x)
+	}
+)
+
+dat$units$driver = 0
+dat$units$woodqual = 0 
+dat$units$wantplot = 0; dat$units$wanttable = 0
+\end{lstlisting}
+
+\noindent
+With the model setting properly specified, we can simulate the growth and yield of all the units in the \textit{cipsrexam} object.  With that information, we can extract the yields when the stand age is 100-years old for each unit.
+
+\begin{lstlisting}
+grown = grow(dat)$samplelist
+
+yield = subset(grown,stage==100 & subperiod==0 | stage!=100 & subperiod==1, select=c(unit,cfv,bfv,subperiod))
+yield = aggregate(.~unit,data=yield,FUN=sum)
+names(yield)[names(yield)=="subperiod"] <- "harvests"
+yield = merge(yield, subset(dat$units,select=c(unit,dfsi)))
+\end{lstlisting}
 
 <<<eval=TRUE,echo=TRUE>>=
-grown = grow(cipsrexam) # Simulate growth of each unit 
-
-# Make a simple yield table of volume attained among different units at 100-years
-yield = subset(grown$samplelist,stage==100 & subperiod==0, select=c(unit,bfv,cfv))
-yield # Print the yield table 
-
-# Is cubic volume yield a function of site-index?
-model = lm(yield$cfv ~ cipsrexam$units$dfsi) 
-summary(model)$coefficients # Maybe DFSI is important, but we need to do more analysis
+print(yield)
 @
 
-As indicated in the commented code, we find some evidence that site-index influenced the volume yield among the units.  We could now explore our analysis question in much greater detail using the saved output \texttt{grown} in the above example and with the analysis tools offered in R.  
+\noindent
+Fitting our linear model, in the context of an analysis of variance (aov) is straightforward.  We define our response and dependent terms from the yield object described above and use the \textit{aov} function in R.  Alternatively we could have used the functions \textit{lm} or \textit{anova}.
+
+\begin{lstlisting}
+model = aov(cfv~dfsi+harvests,data=yield)
+summary(model)
+\end{lstlisting}
+
+<<<eval=TRUE,echo=TRUE>>=
+summary(model)
+@
 
 \section{Big Data Solutions}
 The \textit{cipsr} software has been designed to handle very large forestry analysis tasks.  Still, some users may consider forestry problems which are large enough to require a customized solution. Examples are these problems are when: 90-percent of the available memory allocated to R is used; the output from a single simulation exceeds 1,000 megabytes; or if an Excel file to import or export has a least one sheet in excess of 65,536 rows.  There are many definitions for big data, but if any of the already mentioned constraints is met in \textit{cipsr}, we consider the problem one with a big data component. \\
 
-In general, big data problems can be solved in three ways.  Large problems can be reduced to smaller ones by limiting the scope of analysis, or making the analytical approach more efficient.  If the problem cannot be reduced or made more efficient, the user can increase the amount of computer memory available for analysis.  Memory can be increased in R by installing for RAM on the computer.  In R, a limit of 8 TB of RAM can be used, in the 64-bit version.  A third solution to big data problems is store objects on the hard disc and process them using RAM in chunks.  The current structure of \textit{cipsr} allows users to process large simulations in chunks, or make their analysis more efficient and smaller in scope. Two examples given below, demonstrate processing large datasets in \textit{cipsr}.  Both example use an approach of condensing the problem to minimizing memory use, and processing time in R. 
+In general, big data problems can be solved in three ways.  Large problems can be reduced to smaller ones by limiting the scope of analysis, or making the analytical approach more efficient.  If the problem cannot be reduced or made more efficient, the user can increase the amount of computer memory available for analysis.  Memory can be increased in R by installing for RAM on the computer.  In R, a limit of 8 TB of RAM can be used, in the 64-bit version.  A third solution to big data problems is store objects on the hard disc and process them using RAM in chunks.  The current structure of \textit{cipsr} allows users to process large simulations in chunks, or make their analysis more efficient and smaller in scope. Two examples given below, demonstrate processing large datasets in \textit{cipsr}.  Both example use an approach of condensing the problem to minimizing memory use, and processing time in R. \\
 
-\begin{verbatim}
-# Obtain simulation data from one example unit
-dat = lapply(cipsrexam,function(x) subset(x,unit=="A"))
+\noindent
+\textbf{Example 1.} Extract harvest yields in chunks, retaining only the necessary data.
+
+\begin{lstlisting}
+dat = lapply(cipsrexam, function(x) subset(x, unit=="A"))
 dat$units$wantplot=0; dat$units$wanttable=0 
 
-# Use the single unit to produce 100 (e.g. could be 10,000) units of data
-dat = lapply(1:100,function(i){
+dat = lapply(1:100, function(i){
 		out = dat # Get the template from a single unit	
 		
 		# Name the unit to be produced
-		out = sapply(out,function(x){x$unit=i;x})
+		out = sapply(out, function(x){x$unit=i;x})
 		
 		# Randomly simulate the sample level data
 		n = nrow(out$samples)
 		dbh = out$samples$dbh
-		out$samples$dbh = rnorm(n,mean(dbh),sd(dbh))
+		out$samples$dbh = rnorm(n, mean(dbh), sd(dbh))
 		out$samples$tht = 0; out$samples$cr = 0
 		
 		return(out) # Return the simulated data
 	}
 )
 
-# Example 1. Extract harvest yield in chunks: keep only the necessary data
 grown = lapply(dat,function(x){
-	out = grow(x)$samplelist
-	out = subset(out,subperiod==1 | period==max(period))
-	out = aggregate(.~unit,data=out[c("unit","bfv","cfv")],FUN=sum)
+	out = grow(x, ProgressBar=FALSE)$samplelist
+	out = subset(out, subperiod==1 | period==max(period))
+	out = aggregate(.~unit, data=out[c("unit","bfv","cfv")], FUN=sum)
 	
 	return(out)			
 	}
 )
 grown = do.call(rbind,grown)
+\end{lstlisting}
 
-# Example 2. Extract the full array of cipsr output: constrained to final conditions
+\noindent
+\textbf{Example 2.} Extract the full array of cipsr output: constrained to final conditions.
+
+\begin{lstlisting}
 grown = lapply(dat,function(x){
-		out = grow(x)
+		out = grow(x, ProgressBar=FALSE)
 		
-		# Condense data to just the final period of growth
 		out = sapply(out,function(k){
 				if("period" %in% names(k)){
-					k = subset(k,period==max(period))
+					k = subset(k, period==max(period))
 				}
 				return(k)
 			}
@@ -644,8 +759,8 @@ grown = lapply(dat,function(x){
 	}
 )
 
-grown = do.call(Map,c(rbind,grown)) # Make the list-of-lists one list
-\end{verbatim}
+grown = do.call(Map, c(rbind, grown)) 
+\end{lstlisting}
 
 \nocite{}
 \baselineskip=10pt
