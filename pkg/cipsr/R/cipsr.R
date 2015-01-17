@@ -1584,3 +1584,13 @@ grow <- function(InputList,ProgressBar=TRUE) {
 	return(out) # Return the CIPS R output list		
 	
 }	
+
+# Function returns control values for the quality function
+qualityControl = function(){
+	
+	list(pole=TRUE,saw=TRUE,chip=TRUE,polell=125,poleml=20,poletd=12.41,polebd=4.77,
+			sawll=32,sawml=8,sawtd=6,chipll=16,chipml=8,chiptd=3,sh=0.5,ta=8)
+	
+}
+
+
