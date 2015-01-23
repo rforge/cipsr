@@ -1,16 +1,16 @@
-\name{qualityControl}
+\name{processControl}
 
-\alias{qualityControl}
+\alias{processControl}
 
-\title{Control values for the quality function}
+\title{Control values for the process function}
 
 \description{
-This list contains the default values used in the quality function. These values can be modified can submitted
-as an argument to the quality function.    
+This list contains the default values used in the process function. These values can be modified and submitted
+as an argument to the process function.  Note that all product lengths (e.x. sawll) must be given as whole numbers.
 }
 
 \usage{
-qualityControl = list(pole,saw,chip,polell,poleml,poletd,polebd,
+processControl = list(pole,saw,chip,polell,poleml,poletd,polebd,
 	sawll,sawml,sawtd,chipll,chipml,chiptd,sh,ta)
 }
 
@@ -27,7 +27,7 @@ qualityControl = list(pole,saw,chip,polell,poleml,poletd,polebd,
 \emph{sawml} \tab Minimum saw log length (ft). \cr
 \emph{sawtd} \tab Minimum saw log top diameter (in). \cr
 \emph{chipll} \tab Maximum chip log length (ft). \cr
-\emph{sh} \tab Stump height (ft). \cr
+\emph{sh} \tab Stump height (in). \cr
 \emph{ta} \tab Trim allowance (in). \cr
 }
 }
@@ -35,5 +35,5 @@ qualityControl = list(pole,saw,chip,polell,poleml,poletd,polebd,
 \author{Nathaniel Osborne \email{nathaniel.osborne@oregonstate.edu}}
 
 \keyword{
-control, default
+control, default values
 }

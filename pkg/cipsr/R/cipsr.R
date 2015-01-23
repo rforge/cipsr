@@ -48,7 +48,7 @@ get.template <- function(){
 }
 
 ## Function: Runs Organon and Cipsanon models in R  
-grow <- function(InputList,ProgressBar=TRUE) {
+grow <- function(InputList,ProgressBar=FALSE) {
 	
 	# Identify directories used when running the program
 	home = getwd() # User workspace
@@ -1572,24 +1572,637 @@ grow <- function(InputList,ProgressBar=TRUE) {
 	
 	}
 
-	# Perform a final cleaning of the output information
+	# Perform a final cleaning of the output information 
 	out = lapply(out, function(x) {
 				if(is.null(x)) return()
+				
+				# Ensure no factor levels are contained in output
+				x[] <- lapply(x,function(i){
+							if(is.factor(i)){
+								# Set factor levels as character
+								i = as.character(i)
+							}
+							return(i)
+						}
+				)
+				
 				row.names(x) <- NULL; # Remove row names generated during splitting
 				return(x) # Return the finalized object
 			}
 	)
 	
-	if(ProgressBar) setTxtProgressBar(Progress,T) # Finalize the progress bar 
+	# Update progress bar if specified by the user
+	if(ProgressBar) {
+		setTxtProgressBar(Progress,T) # Finalize the progress bar 
+		close(Progress) # Close the finalized progress bar
+	}
+		
 	return(out) # Return the CIPS R output list		
 	
 }	
 
 # Function returns control values for the quality function
-qualityControl = function(){
+processControl = function(){
 	
-	list(pole=TRUE,saw=TRUE,chip=TRUE,polell=125,poleml=20,poletd=12.41,polebd=4.77,
-			sawll=32,sawml=8,sawtd=6,chipll=16,chipml=8,chiptd=3,sh=0.5,ta=8)
+	# List of default values controlling the quality function
+	list(pole=TRUE,saw=TRUE,chip=TRUE,polell=125,poleml=32,poletd=13,polebd=4,
+			sawll=32,sawml=18,sawtd=6,chipll=18,chipml=8,chiptd=3,sh=6,ta=8)
+	
+}
+
+
+# Function estimates the quality of individual tree yield resulting from a cipsr simulation
+process <- function(treelist, control=list(), ProgressBar=FALSE){
+	
+	# Only allow certain tree species as input: later test for supported variants 
+	if(any(!treelist$species %in% c(202,15,17,122,117,81))){
+		return(message("Unsupport tree species detected in the input."))
+	}
+	
+	# Test that the control values submitted by the user are supported
+	if(!all(names(control) %in% names(processControl()))){
+		return(message("Control values contain unsupported commands."))
+	}
+	
+	# Apply a series of checks to ensure input is properly formatted	
+	if(!all(c("unit","subperiod","stage","tree","species","dbh","tht","cr","mgexp") %in% names(treelist))){
+		return(message("Supplied input is not correctly formatted."))
+	}
+	
+	# Update control values as necessary with the default control values
+	control = modifyList(processControl(),control)
+	
+	# Require that round numbers be supplies for all numeric inputs
+	if(	any(sapply(control[c("poleml","polell","sawml","sawll","chipml","chipll")], 
+					function(i) grepl(".",as.character(i),fixed=TRUE))) ) {
+		return(message("Product lengths must be supplied as whole numbers."))
+	}
+	
+	# Test for negative values in the controls for bucking stems
+	if(any(sapply(control,function(i) !i>0))){
+		return(message("Negative values in the control list are not allowed."))
+	}
+	
+	# Expel elements of the list into the parent enviornment 
+	sapply(names(control),function(i) assign(i,get(i,control),envir=parent.env(environment())))
+	
+	# Define functions and import specification tables (reduce table to only necessary components)
+	polegrade = read.table(paste(path.package("cipsr"),"tabs","pole_grade.txt",sep="/"),header=TRUE)
+	
+	# Impose restrictions: logs possible to cut are defined by the pole grading table
+	polegrade = subset(polegrade, ll >= poleml & ll <= polell & bd >= polebd & td <= poletd)
+	
+	# [Eq. 1] Inside bark diameter at height: Hann and Walters (1986) (in)
+	eq1 <- function(dbh,tht,cr,h,species){
+		
+		hcb = tht - (cr*tht) # Compute height to crown base (ft)
+		
+		h[h>tht] <- NA # Constain so estimates are not provided when height on stem is greater than tree height				
+		x = h/tht # Relative height on stem 
+		ka = (0.5*hcb-4.5)/tht # Parameter for polynomial join point
+		ia = rep(0,length(x)); ia[ka<x & x<=1] <- 1 # Define the first indicator variable 
+		ib = rep(0,length(x)); ib[ka>0] <- 1 # Define the second indicator variable			 
+		Za = 1-x+ib*(x+ia*(((x-1)/(ka-1)*(1+(ka-x)/(ka-1))-1)))-(x-1)*(x-ib*x) 
+		Zb = ib*(x+ia*((x-1)/(ka-1)*(x+ka*(ka-x)/(ka-1))-x))-(x-1)*(x-ib*x)
+		Zc = ib*(x^2+ia*(ka*((x-1)/(ka-1))*(2*x-ka+ka*(ka-x)/(ka-1))-x^2))
+		
+		# Specify taper function parameters dependent on tree species
+		switch(as.character(species),
+				# Douglas-fir
+				"202"={
+					a1 = 0.903563
+					a2 = 0.989388
+					b10 = -1.332560
+					b11 = 0.1682970
+					b12 = -0.0089899
+					b20 = 0.371387
+				},
+				# White-fir
+				"15"={
+					a1 = 0.904973
+					a2 = 1.000000
+					b10 = -1.855820
+					b11 = 0.3468810
+					b12 = -0.0217170
+					b20 = 0.978073		
+				},	
+				# Grand-fir
+				"17"={
+					a1 = 0.904973
+					a2 = 1.000000
+					b10 = -1.855820
+					b11 = 0.3468810
+					b12 = -0.0217170
+					b20 = 0.978073			
+				},
+				# Ponderosa pine	
+				"122"={
+					a1 = 0.809427
+					a2 = 1.016866
+					b10 = -0.879137
+					b11 = 0.0161367
+					b12 = 0.00
+					b20 = 0.485846							
+				},
+				# Sugar pine
+				"117"={
+					a1 = 0.859045
+					a2 = 1.000000
+					b10 = -1.159700
+					b11 = 0.0619508
+					b12 = 0.00
+					b20 = 0.183413							
+				},
+				# Incense-cedar
+				"81"={
+					a1 = 0.837291
+					a2 = 1.000000
+					b10 = -1.332360
+					b11 = 0.1040340
+					b12 = 0.00
+					b20 = 0.198113							
+				},
+				# "Pacific yew"
+				"231"={	
+				},
+				# Western red cedar
+				"242"={	
+				},
+				# Western hemlock
+				"263"={
+				},	
+				# Bigleaf maple
+				"312"={
+				},	
+				# Red alder
+				"351"={
+				},	
+				# Pacific madrone
+				"361"={
+				},	
+				# Golden chinkapin
+				"431"={
+				},
+				# Pacific dogwood
+				"492"={
+				},
+				# Tanoak 
+				"631"={	
+				},
+				# Canyon live oak 
+				"805"={
+				},
+				# Oregon white oak 
+				"815"={
+				},
+				# California black oak
+				"818"={
+				},
+				# Willow 
+				"920"={
+				}
+		)			
+		
+		u = Za+(b10+b11*(h/dbh)+b12*(h/dbh)^2)*Zb+b20*Zc # Outside bark taper ratio; di/dbh 
+		
+		# Use regional coefficients to estimate inside bark diameter at breast height (in) (Larsen and Hann, 1985)	
+		dib = u * (a1*dbh^a2) 
+
+		return(dib) 
+		
+	}
+	
+	# [Eq. 2] Heartwood diameter at height: Maguire (2013) (in)
+	eq2 <- function(tht,dbh,cr,h){
+		
+		# Convert units from imperial to metric
+		tht=tht*0.3048; dbh=dbh*2.54; h=h*0.3048
+		
+		cl = cr* tht # Crown length (m)	
+		hcb = tht - cl # Height to crown base (m)		
+		
+		# Height of the heartwood core (m)
+		b0=2.3615; b1=1.9650; b2=-1.3129; b3=1.1380
+		hhc = tht/(1+exp(b0+b1*log(cr)+b2*log(cl)+b3*(tht/dbh))) 
+		
+		# Heartwood diameter at breast height (cm)
+		c1=0.6368; c2=-0.0112; c3=-0.4137; c4=0.3964
+		hbh = c1*dbh^(c2*tht+c3*log(cr)+c4*log(cl))
+		
+		# Heartwood diameter (cm) at some height on stem
+		d1=-0.11664; d2=-0.66487
+		
+		x = (h-1.37)/(hhc-1.37)
+		k = (0.5*hcb-1.37)/(hhc-1.37)
+		i1 = 0; i1[k>0 & x>k] <- 1  
+		i2 = 0; i2[k>0] <- 1	
+		w = (x-1)/(k-1)
+		z = (k-x)/(k-1)
+		y1 = i2*(x+i1*(w*(1+z)-1))-(x-1)*(x-i2*x)
+		y2 = i2*(x+i1*(w*(x+k*z)-x)-(x-1)*(x-i2*x))
+		y3 = i2*(x^2+i1*(k*w*(2*x-k+k*z)-x^2))
+		
+		hdi = hbh *(1-x+y1+(d1*exp(dbh/tht))*y2+(d2*(tht/dbh))*y3)
+		
+		hdi = hdi * 0.393701 # Heartwood diameter(converted from cm) (in)
+		
+		return(hdi)
+	}
+	
+	# [Eq. 3] Maximum branch diameter: Weiskittle et al. (2007) (in)
+	eq3 <- function(dbh,tht,cr,h){	
+		
+		# Convert diameter to (cm) and tree height to (m) and height on stem to (m)
+		dbh = dbh * 2.54; tht = tht * 0.3048; h = h * 0.3048
+		
+		hrel = h/tht # Relative branch height on stem 
+		cl = cr*tht # Crown length (m)
+		hcm = tht - (0.5*cl) # Height to the crown midpoint (m)
+		
+		# Estimat the maximum branch diameter (mm)
+		a =	0.6839*dbh^0.9142*((1-sqrt(hrel))/(1-sqrt(0.8934*cr^-0.0566)))
+		b =	(0.8872*sqrt(hrel)+0.2244*exp(-dbh/tht)-0.05895*(hrel*(dbh/tht))-0.2483*log(hcm)+0.1988*log(cl))
+		out = a^b 
+		
+		# Convert and return maximum branch diameter (in)
+		out = out * 0.0393701 
+		return(out)
+	}
+	
+	# [Eq. 4] Scribner volume (by regression) Bruce and Schumacher (1950)
+	eq4 <- function(td,ll){
+		out = (0.79*td^2-2*td-4)*(ll/16)
+		out[out<0] <- 0 
+		return(out)
+	}
+	
+	# [Eq. 5] Cubic foot volume through numeric integration 
+	eq5 <- function(dbh,tht,cr,species,h1,h2){
+		
+		int = 0.01 # Segmentation intensity (ft) 
+		h = seq(h1,h2,length=ceiling((h2-h1)/int))
+		
+		# Hann and Walters (1986): Taper inside bark (in) at height on stem
+		hcb = tht - (cr*tht) # Compute height to crown base (ft)
+		
+		h[h>tht] <- NA # Constain so estimates are not provided when height on stem is greater than tree height				
+		x = h/tht # Relative height on stem 
+		ka = (0.5*hcb-4.5)/tht # Parameter for polynomial join point
+		ia = rep(0,length(x)); ia[ka<x & x<=1] <- 1 # Define the first indicator variable 
+		ib = rep(0,length(x)); ib[ka>0] <- 1 # Define the second indicator variable			 
+		Za = 1-x+ib*(x+ia*(((x-1)/(ka-1)*(1+(ka-x)/(ka-1))-1)))-(x-1)*(x-ib*x) 
+		Zb = ib*(x+ia*((x-1)/(ka-1)*(x+ka*(ka-x)/(ka-1))-x))-(x-1)*(x-ib*x)
+		Zc = ib*(x^2+ia*(ka*((x-1)/(ka-1))*(2*x-ka+ka*(ka-x)/(ka-1))-x^2))
+		
+		# Specify taper function parameters dependent on tree species
+		switch(as.character(species),
+				# Douglas-fir
+				"202"={
+					a1 = 0.903563
+					a2 = 0.989388
+					b10 = -1.332560
+					b11 = 0.1682970
+					b12 = -0.0089899
+					b20 = 0.371387
+				},
+				# White-fir
+				"15"={
+					a1 = 0.904973
+					a2 = 1.000000
+					b10 = -1.855820
+					b11 = 0.3468810
+					b12 = -0.0217170
+					b20 = 0.978073		
+				},	
+				# Grand-fir
+				"17"={
+					a1 = 0.904973
+					a2 = 1.000000
+					b10 = -1.855820
+					b11 = 0.3468810
+					b12 = -0.0217170
+					b20 = 0.978073			
+				},
+				# Ponderosa pine	
+				"122"={
+					a1 = 0.809427
+					a2 = 1.016866
+					b10 = -0.879137
+					b11 = 0.0161367
+					b12 = 0.00
+					b20 = 0.485846							
+				},
+				# Sugar pine
+				"117"={
+					a1 = 0.859045
+					a2 = 1.000000
+					b10 = -1.159700
+					b11 = 0.0619508
+					b12 = 0.00
+					b20 = 0.183413							
+				},
+				# Incense-cedar
+				"81"={
+					a1 = 0.837291
+					a2 = 1.000000
+					b10 = -1.332360
+					b11 = 0.1040340
+					b12 = 0.00
+					b20 = 0.198113							
+				},
+				# "Pacific yew"
+				"231"={	
+				},
+				# Western red cedar
+				"242"={	
+				},
+				# Western hemlock
+				"263"={
+				},	
+				# Bigleaf maple
+				"312"={
+				},	
+				# Red alder
+				"351"={
+				},	
+				# Pacific madrone
+				"361"={
+				},	
+				# Golden chinkapin
+				"431"={
+				},
+				# Pacific dogwood
+				"492"={
+				},
+				# Tanoak 
+				"631"={	
+				},
+				# Canyon live oak 
+				"805"={
+				},
+				# Oregon white oak 
+				"815"={
+				},
+				# California black oak
+				"818"={
+				},
+				# Willow 
+				"920"={
+				}
+		)			
+		
+		u = Za+(b10+b11*(h/dbh)+b12*(h/dbh)^2)*Zb+b20*Zc # Outside bark taper ratio: di/dbh 
+		
+		# Use regional coefficients to estimate inside bark diameter at breast height (Larsen and Hann, 1985)
+		d1 = u * (a1*dbh^a2) # Bottom diameter (in)
+		
+		# Compute the stemwood volume between h1 and h2 (ft2) 
+		d1 = d1/12 # Bottom diameter (ft)
+		d2 = c(d1[-1],NA) # Top diameter (ft)
+		a1 = pi * (d1/2)^2 # Area of the bottom section (ft2)
+		a2 = pi * (d2/2)^2 # Area of the top section (ft2)
+		l = (h2-h1)/length(h) # Length of the section (ft)
+		out = (a1+a2)/2 * l # Volume for each section (ft3)
+		out = sum(out,na.rm=TRUE) # Volume between h1, h2 (ft3)
+		
+		# Return the numerically integrated volume
+		return(out)
+		
+	}
+	
+	# Only consider quality of wood only at the time of harvest 
+	treelist = subset(treelist, mgexp > 0) 
+	
+	# Scale a large matrix upon maximum number of logs possible to take from each tree
+	scale = treelist$tht/min(c(poleml,sawml,chipml))
+	scale = ceiling(sum(scale))
+	
+	# Preallocate the matrix as NULL values
+	out = try(data.frame(matrix(NA, nrow=scale,ncol=11)), silent=TRUE) 
+	try(names(out) <- c("unit","period","tree","log","type","class","ll","top","cfvol","bfvol","mgexp"),silent=TRUE)
+	
+	# If not enough space for allocation: stop and report
+	if(!is.data.frame(out)){
+		return(message("Out of memory. See big data solutions section of vignette. Input database is to large."))
+	}
+	
+	i = 1 # Initialize row location in the output object to be populated
+	tick = 0 # Intialize a counter for the progress bar (even if not used)
+	
+	by(treelist, 1:nrow(treelist), function(x){
+				
+				# Capture time to buck and process the first tree
+				if(ProgressBar & tick==0){
+					time1 = proc.time()[3]
+				}
+				
+				# Ensure the file size is not to large through the procedure
+				if(object.size(out)>1e+09 | memory.size()/memory.limit() > 0.9){
+					return(message("\r\n Memory limit nearly exceeded.  See big data solutions in the vignette."))
+					break
+				}
+				
+				# Make a blank list to populate as the tree is bucked up
+				harvest = list() 
+				
+				# Bucking variables to initialize 
+				k = 1 # Initialize the log number being processed for a given tree
+				h = sh/12 # Increase cutting height at tree stump (ft)
+				
+				# [Priority 1.] Harvest poles as possible
+				repeat{
+					
+					# Only merchandize poles if requested (for Douglas-fir)
+					if(!pole | x$species!=202) break 
+					
+					# Estimate diameters at the log base (h)
+					heart = with(x,eq2(tht,dbh,cr,h)) # Heartwood diameter (in)		
+					bot = with(x,eq1(dbh,tht,cr,h,species)) # Inside bark diameter (in)
+					sap = bot - heart # Sapwood diameter (in)
+					
+					# Estimate diameters at various heights, defined by possible pole lengths 			
+					top =  with(x,eq1(dbh,tht,cr,h+polegrade$ll,species))
+					
+					# Obtain the largest possible pole (maximizing value recovery)		
+					cut = data.frame(polegrade,top,bot) # Pair up with the pole dimension table
+					cut = subset(cut, bot >= bd & top >= td) # Reduce by the dimensional requirement
+					
+					# Require at least one dimensional specification to be met and 1.25 in. sapwood at log base
+					if(nrow(cut)==0 | sap < 1.25) break 				
+					
+					# Select the best possible tree: maximum length and diameter
+					cut = cut[order(cut$ll,cut$td,decreasing=TRUE),][1,] 
+					
+					# Compute the log volume (cubic and scribner)
+					cfvol = with(x,eq5(dbh,tht,cr,species,h,h+cut$ll)) 
+					bfvol = with(cut,eq4(top,ll))
+					
+					# Associate the remaining log information before moving on
+					cut = merge(cut,
+							data.frame(
+									log = k,
+									type = "pole",
+									mgexp = x$mgexp,
+									cfvol = cfvol,
+									bfvol = bfvol
+							)
+					)
+					
+					# Save information from the bucked log
+					harvest[[k]] <- cut[c("log","type","class","ll","top","cfvol","bfvol","mgexp")] 
+					k = k+1 # Increase the log number (for the next log to be cut)
+					h = h + cut$ll + ta/12 # Increase the height on stem for bucking 
+					
+				}
+				
+				# [Priority 2.] Harvest saw logs as possible
+				repeat{
+					
+					# Only mechandize sawlogs if requested
+					if(!saw ) break 
+					
+					# Estimate the scaling diameter at the top of the log (from minimum to maximum length)
+					cut = data.frame(ll=seq(sawml,sawll,by=1)) # Identify all possible logs to cut
+					cut$top = with(x,eq1(dbh,tht,cr,h+cut$ll,species)) # Estimate inside bark diameter (in) at top of each log
+					cut = subset(cut, !is.na(top) & top >= sawtd) # Apply the minimum top diameter constraint
+					
+					# Require at least one log meeting dimensional requirements to proceed
+					if(nrow(cut)==0) break
+					
+					cut = cut[which.max(cut$ll),] # Identify and take the longest possible log 
+					
+					# Grade the log into product classifications (Fahey et al. 1991 pg. 14)	 [Branch Diameter Only]
+					
+					# Identify maximum branch diameters across the cut log
+					llad = max( with(x,eq3(dbh,tht,cr,seq(h,h+cut$ll,length=100))) ) 	
+					
+					select = 43.12*exp(0.696*llad+-2.322*llad^2)
+					no1 = 11.09*exp(2.466*llad+-1.6767*llad^2)
+					no3 = 1.45*exp(2.6288*llad+-0.5415*llad^2)
+					econ = 0.89*exp(1.698*llad+-0.141*llad^2)
+					no2 = 100 - (select+no1+no3+econ)
+					
+					# Compute the log volume (cubic and scribner)
+					cfvol = with(x,eq5(dbh,tht,cr,species,h,h+cut$ll))
+					bfvol = with(cut,eq4(top,ll))
+					
+					# Finalize information about the bucked log 
+					h = h + cut$ll + ta/12 # Increase the bucking height
+					
+					# Associate the remaining log information before moving on
+					cut = merge(cut,
+							data.frame(
+									log = k,
+									type = "saw",
+									class = c("select","no1","no2","no3","economy"),
+									mgexp = c(select,no1,no2,no3,econ)/100 * x$mgexp,
+									cfvol = c(select,no1,no2,no3,econ)/100 * cfvol,
+									bfvol = c(select,no1,no2,no3,econ)/100 * bfvol
+							)
+					)
+					
+					# Save information from the bucked log
+					harvest[[k]] <- cut[c("log","type","class","ll","top","cfvol","bfvol","mgexp")]  
+					k = k+1 # Increase the log number
+					
+				}
+				
+				# [Priority 3.] Harvest chip logs as possible
+				repeat{
+					
+					# Only mechandize sawlogs if requested
+					if(!chip ) break 
+					
+					# Estimate the scaling diameter at the top of the log
+					cut = data.frame(ll=seq(chipml,chipll,by=1)) # Identify all possible logs to cut
+					cut$top = with(x,eq1(dbh,tht,cr,h+cut$ll,species)) # Estimate inside bark diameter (in) at top of each log
+					cut = subset(cut, !is.na(top) & top >= chiptd) # Apply the minimum top diameter constraint
+					
+					# Require at least one log meeting dimensional requirements to proceed
+					if(nrow(cut)==0) break
+					
+					cut = cut[which.max(cut$ll),] # Identify and take the longest possible log 
+					
+					# Compute the log volume (cubic and scribner)
+					cfvol = with(x,eq5(dbh,tht,cr,species,h,h+cut$ll))
+					bfvol = with(cut,eq4(top,ll))
+					
+					# Finalize information about the bucked log 					
+					h = h + cut$ll + ta/12 # Increase the bucking height
+					
+					# Associate the remaining log information before moving on
+					cut = merge(cut, 
+							data.frame(
+									mgexp = x$mgexp,
+									log = k,
+									type = "chip",
+									class = "standard",
+									cfvol = cfvol,
+									bfvol = bfvol
+							)
+					)
+					
+					# Save the cut log as harvest data
+					harvest[[k]] <- cut[c("log","type","class","ll","top","cfvol","bfvol","mgexp")] 
+					k = k+1 # Increase the log number				
+					
+				}			
+				
+				# Finalize and dub in information from bucking the tree
+				if(length(harvest)>0){
+					
+					# Bind and merge relevant information
+					harvest = do.call(rbind,harvest) 
+					x = x[c("unit","period","tree")]
+					harvest = merge(x,harvest) 
+					
+					# Dub in the processed data
+					n = nrow(harvest) 
+					out[i:(i+(n-1)),names(out)] <<- harvest[names(out)] 
+					i <<- i+n 
+				}
+				
+				# Report an estimate of procedure competion time: only on first iteration
+				if(ProgressBar & tick==0){					
+					time2 = proc.time()[3] 
+					proc = (time2-time1) * nrow(treelist)
+					
+					# If procedure longer than one minute: report message
+					if(proc>60 & proc <3600){
+						proc = (proc/60) # Est' completion time (minutes)
+						proc = round(proc,2)
+						message(paste("\r Estimated Time to Completion (minutes):",proc))
+					}
+					
+					# If procedure longer than one hour: report message
+					if(proc>=3600){
+						proc = (proc/60) / 60 # Est' completion time (hours)
+						proc = round(proc,2)
+						message(paste("\r Estimated Time to Completion (hours):",proc))
+					}	
+					
+					# Initialize the progress bar
+					Progress <<- txtProgressBar(min=0,max=nrow(treelist),style=3)
+				}
+				
+				# On each iteration: update a progress bar
+				if(ProgressBar){
+					tick <<- tick + 1 
+					setTxtProgressBar(Progress,tick)
+				}
+				
+				return(NULL) # Force out only a NULL value 
+				
+			} 
+	)
+	
+	# Remove the unpopulated rows of the output file
+	out = out[complete.cases(out),]
+	rownames(out) <- NULL 
+	
+	# Return the final output object
+	if(ProgressBar)	close(Progress) # Close the finalized progress bar
+	return(out)
 	
 }
 
