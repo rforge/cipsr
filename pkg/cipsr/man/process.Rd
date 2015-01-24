@@ -25,10 +25,38 @@ process(treelist,control=list(),ProgressBar=FALSE)
 \emph{control} \tab Arguments for processing each tree. \cr
 \emph{ProgresBar} \tab Should a progress bar be made. By default FALSE. \cr
 }
+
+Detail regarding the output from the process function may be found at in the cipsr vignette: help(package="cipsr").
 }
 
 \author{Nathaniel Osborne \email{nathaniel.osborne@oregonstate.edu}}
 
 \keyword{
 tree harvesting algorithm
+}
+
+\references{
+Borders, B., & Shiver, B. (1995). Board Foot Volume Estimation for Southern Pines. 
+	Southern Journal of Applied Forestry, 19(1).
+
+Cascade, M. (2015). Standard Dimensions for Douglas Fir and Southern Yellow Pine Poles.
+
+Hann, D. W. (2011). Revised Volume and Taper Equations for Six Major Conifer Species in 
+	Southwest Oregon. Oregon State University, Department of Forest Engineering, Resources 
+	and Management, Forest Biometrics Research Paper 2.
+
+Maguire, D. (2014). Center for Intensive Planted-forest Silviculture: Annual Report 2013: 
+	Models for the Height and Shape of the Heartwood Core in Douglas-fir. Oregon State 
+	University, Department of Forest Engineering, Resources and Management.
+	
+Weiskittel, A. R., Maguire, D. a., & Monserud, R. a. (2007). Modeling crown structural responses 
+	to competing vegetation control, thinning, fertilization, and Swiss needle cast in coastal 
+	Douglas-fir of the Pacific Northwest, USA. Forest Ecology and Management, 245(1-3), 96–109. 
+}
+
+\examples{
+grown = grow(cipsrexam)$treelist
+harvest = process(grown,ProgressBar=TRUE) 
+aggregate(cbind(cfv,bfv)~unit+type+class, data=harvest, FUN=sum)
+
 }

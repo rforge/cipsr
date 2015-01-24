@@ -37,3 +37,7 @@ processControl = list(pole,saw,chip,polell,poleml,poletd,polebd,
 \keyword{
 control, default values
 }
+
+\examples{
+processControl()
+}

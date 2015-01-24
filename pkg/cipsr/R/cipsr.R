@@ -34,6 +34,7 @@ load.data <- function(InputFile) {
 	
 }
 
+
 ## Function: Gets the Excel template and copies it into the users working directory
 get.template <- function(){
 	
@@ -1601,7 +1602,8 @@ grow <- function(InputList,ProgressBar=FALSE) {
 	
 }	
 
-# Function returns control values for the quality function
+
+## Function returns control values for the quality function
 processControl = function(){
 	
 	# List of default values controlling the quality function
@@ -1611,14 +1613,9 @@ processControl = function(){
 }
 
 
-# Function estimates the quality of individual tree yield resulting from a cipsr simulation
+## Function estimates the quality of individual tree yield resulting from a cipsr simulation
 process <- function(treelist, control=list(), ProgressBar=FALSE){
-	
-	# Only allow certain tree species as input: later test for supported variants 
-	if(any(!treelist$species %in% c(202,15,17,122,117,81))){
-		return(message("Unsupport tree species detected in the input."))
-	}
-	
+		
 	# Test that the control values submitted by the user are supported
 	if(!all(names(control) %in% names(processControl()))){
 		return(message("Control values contain unsupported commands."))
@@ -1634,8 +1631,8 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 	
 	# Require that round numbers be supplies for all numeric inputs
 	if(	any(sapply(control[c("poleml","polell","sawml","sawll","chipml","chipll")], 
-					function(i) grepl(".",as.character(i),fixed=TRUE))) ) {
-		return(message("Product lengths must be supplied as whole numbers."))
+			function(i) grepl(".",as.character(i),fixed=TRUE))) ) {
+			return(message("Product lengths must be supplied as whole numbers."))
 	}
 	
 	# Test for negative values in the controls for bucking stems
@@ -1647,18 +1644,20 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 	sapply(names(control),function(i) assign(i,get(i,control),envir=parent.env(environment())))
 	
 	# Define functions and import specification tables (reduce table to only necessary components)
-	polegrade = read.table(paste(path.package("cipsr"),"tabs","pole_grade.txt",sep="/"),header=TRUE)
-	
+	polegrade = read.table(paste(path.package("cipsr"),"tabs","pole_grade.txt",sep="/"),
+			header=TRUE,stringsAsFactors=FALSE)
+		
 	# Impose restrictions: logs possible to cut are defined by the pole grading table
 	polegrade = subset(polegrade, ll >= poleml & ll <= polell & bd >= polebd & td <= poletd)
 	
 	# [Eq. 1] Inside bark diameter at height: Hann and Walters (1986) (in)
 	eq1 <- function(dbh,tht,cr,h,species){
-		
-		hcb = tht - (cr*tht) # Compute height to crown base (ft)
+			
+		hcb = tht - (cr*tht) # Compute height to crown base (ft)	
 		
 		h[h>tht] <- NA # Constain so estimates are not provided when height on stem is greater than tree height				
 		x = h/tht # Relative height on stem 
+		hd = (tht-4.5)/dbh # Adjusted height diameter ratio
 		ka = (0.5*hcb-4.5)/tht # Parameter for polynomial join point
 		ia = rep(0,length(x)); ia[ka<x & x<=1] <- 1 # Define the first indicator variable 
 		ib = rep(0,length(x)); ib[ka>0] <- 1 # Define the second indicator variable			 
@@ -1670,103 +1669,102 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 		switch(as.character(species),
 				# Douglas-fir
 				"202"={
-					a1 = 0.903563
-					a2 = 0.989388
-					b10 = -1.332560
-					b11 = 0.1682970
-					b12 = -0.0089899
-					b20 = 0.371387
+					a1 = 0.92443655
+					a2 = 0.98886654
+					a3 = -0.03414550
+					b1 = -0.550298007
+					b2 = -0.69479837
+					b3 = -0.0613100423
+					b4 = 0.356974513 
 				},
 				# White-fir
 				"15"={
-					a1 = 0.904973
-					a2 = 1.000000
-					b10 = -1.855820
-					b11 = 0.3468810
-					b12 = -0.0217170
-					b20 = 0.978073		
+					a1 = 0.92162494
+					a2 = 1.0
+					a3 = -0.03415396
+					b1 = -0.342017552
+					b2 = -0.777574201
+					b3 = -0.0433569876
+					b4 = 0.672963393
 				},	
 				# Grand-fir
 				"17"={
-					a1 = 0.904973
-					a2 = 1.000000
-					b10 = -1.855820
-					b11 = 0.3468810
-					b12 = -0.0217170
-					b20 = 0.978073			
+					a1 = 0.92162494
+					a2 = 1.0
+					a3 = -0.03415396
+					b1 = -0.342017552
+					b2 = -0.777574201
+					b3 = -0.0433569876
+					b4 = 0.672963393	
 				},
 				# Ponderosa pine	
 				"122"={
-					a1 = 0.809427
-					a2 = 1.016866
-					b10 = -0.879137
-					b11 = 0.0161367
-					b12 = 0.00
-					b20 = 0.485846							
+					a1 = 0.80860026
+					a2 = 1.01742589
+					a3 = 0.0
+					b1 = -0.595823501
+					b2 = -1.25803662
+					b3 = -0.013867406
+					b4 = 0.0998711245					
 				},
 				# Sugar pine
 				"117"={
-					a1 = 0.859045
-					a2 = 1.000000
-					b10 = -1.159700
-					b11 = 0.0619508
-					b12 = 0.00
-					b20 = 0.183413							
+					a1 = 0.85897904
+					a2 = 1.0
+					a3 = 0.0
+					b1 = -0.6
+					b2 = -0.48435806
+					b3 = -0.033249206
+					b4 = 0.10862035						
 				},
 				# Incense-cedar
 				"81"={
-					a1 = 0.837291
-					a2 = 1.000000
-					b10 = -1.332360
-					b11 = 0.1040340
-					b12 = 0.00
-					b20 = 0.198113							
+					a1 = 0.87875535
+					a2 = 1.0
+					a3 = -0.07696055
+					b1 = -0.596278066
+					b2 = -0.83987883
+					b3 = -0.0685768402
+					b4 = 0.134178717					
 				},
 				# "Pacific yew"
 				"231"={	
+					a1 = 0.97
+					a2 = 1.0
+					a3 = 0.0
+					b1 = -0.596278066
+					b2 = -0.83987883
+					b3 = -0.0685768402
+					b4 = 0.134178717	
 				},
 				# Western red cedar
 				"242"={	
+					a1 = 0.9497
+					a2 = 1.0
+					a3 = 0.0
+					b1 = -0.596278066
+					b2 = -0.83987883
+					b3 = -0.0685768402
+					b4 = 0.134178717	
 				},
 				# Western hemlock
 				"263"={
-				},	
-				# Bigleaf maple
-				"312"={
-				},	
-				# Red alder
-				"351"={
-				},	
-				# Pacific madrone
-				"361"={
-				},	
-				# Golden chinkapin
-				"431"={
-				},
-				# Pacific dogwood
-				"492"={
-				},
-				# Tanoak 
-				"631"={	
-				},
-				# Canyon live oak 
-				"805"={
-				},
-				# Oregon white oak 
-				"815"={
-				},
-				# California black oak
-				"818"={
-				},
-				# Willow 
-				"920"={
+					a1 = 0.933707
+					a2 = 1.0
+					a3 = 0.0
+					b1 = -0.55029801
+					b2 = -0.69479837
+					b3 = -0.0613100423
+					b4 = 0.35697451		
 				}
 		)			
 		
-		u = Za+(b10+b11*(h/dbh)+b12*(h/dbh)^2)*Zb+b20*Zc # Outside bark taper ratio; di/dbh 
+	
+		u = (Za + (b1 + b2 * exp(b3*hd^2)) * Zb + b4 * Zc)
+		
 		
 		# Use regional coefficients to estimate inside bark diameter at breast height (in) (Larsen and Hann, 1985)	
-		dib = u * (a1*dbh^a2) 
+		dib = u * a1*(dbh^a2)*exp(a3*(1.0-cr)^0.5) 
 
 		return(dib) 
 		
@@ -1809,7 +1807,7 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 		return(hdi)
 	}
 	
-	# [Eq. 3] Maximum branch diameter: Weiskittle et al. (2007) (in)
+	# [Eq. 3] Maximum branch diameter (Douglas-fir): Weiskittle et al. (2007) 
 	eq3 <- function(dbh,tht,cr,h){	
 		
 		# Convert diameter to (cm) and tree height to (m) and height on stem to (m)
@@ -1819,7 +1817,7 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 		cl = cr*tht # Crown length (m)
 		hcm = tht - (0.5*cl) # Height to the crown midpoint (m)
 		
-		# Estimat the maximum branch diameter (mm)
+		# Estimate the maximum branch diameter (mm)
 		a =	0.6839*dbh^0.9142*((1-sqrt(hrel))/(1-sqrt(0.8934*cr^-0.0566)))
 		b =	(0.8872*sqrt(hrel)+0.2244*exp(-dbh/tht)-0.05895*(hrel*(dbh/tht))-0.2483*log(hcm)+0.1988*log(cl))
 		out = a^b 
@@ -1842,119 +1840,8 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 		int = 0.01 # Segmentation intensity (ft) 
 		h = seq(h1,h2,length=ceiling((h2-h1)/int))
 		
-		# Hann and Walters (1986): Taper inside bark (in) at height on stem
-		hcb = tht - (cr*tht) # Compute height to crown base (ft)
-		
-		h[h>tht] <- NA # Constain so estimates are not provided when height on stem is greater than tree height				
-		x = h/tht # Relative height on stem 
-		ka = (0.5*hcb-4.5)/tht # Parameter for polynomial join point
-		ia = rep(0,length(x)); ia[ka<x & x<=1] <- 1 # Define the first indicator variable 
-		ib = rep(0,length(x)); ib[ka>0] <- 1 # Define the second indicator variable			 
-		Za = 1-x+ib*(x+ia*(((x-1)/(ka-1)*(1+(ka-x)/(ka-1))-1)))-(x-1)*(x-ib*x) 
-		Zb = ib*(x+ia*((x-1)/(ka-1)*(x+ka*(ka-x)/(ka-1))-x))-(x-1)*(x-ib*x)
-		Zc = ib*(x^2+ia*(ka*((x-1)/(ka-1))*(2*x-ka+ka*(ka-x)/(ka-1))-x^2))
-		
-		# Specify taper function parameters dependent on tree species
-		switch(as.character(species),
-				# Douglas-fir
-				"202"={
-					a1 = 0.903563
-					a2 = 0.989388
-					b10 = -1.332560
-					b11 = 0.1682970
-					b12 = -0.0089899
-					b20 = 0.371387
-				},
-				# White-fir
-				"15"={
-					a1 = 0.904973
-					a2 = 1.000000
-					b10 = -1.855820
-					b11 = 0.3468810
-					b12 = -0.0217170
-					b20 = 0.978073		
-				},	
-				# Grand-fir
-				"17"={
-					a1 = 0.904973
-					a2 = 1.000000
-					b10 = -1.855820
-					b11 = 0.3468810
-					b12 = -0.0217170
-					b20 = 0.978073			
-				},
-				# Ponderosa pine	
-				"122"={
-					a1 = 0.809427
-					a2 = 1.016866
-					b10 = -0.879137
-					b11 = 0.0161367
-					b12 = 0.00
-					b20 = 0.485846							
-				},
-				# Sugar pine
-				"117"={
-					a1 = 0.859045
-					a2 = 1.000000
-					b10 = -1.159700
-					b11 = 0.0619508
-					b12 = 0.00
-					b20 = 0.183413							
-				},
-				# Incense-cedar
-				"81"={
-					a1 = 0.837291
-					a2 = 1.000000
-					b10 = -1.332360
-					b11 = 0.1040340
-					b12 = 0.00
-					b20 = 0.198113							
-				},
-				# "Pacific yew"
-				"231"={	
-				},
-				# Western red cedar
-				"242"={	
-				},
-				# Western hemlock
-				"263"={
-				},	
-				# Bigleaf maple
-				"312"={
-				},	
-				# Red alder
-				"351"={
-				},	
-				# Pacific madrone
-				"361"={
-				},	
-				# Golden chinkapin
-				"431"={
-				},
-				# Pacific dogwood
-				"492"={
-				},
-				# Tanoak 
-				"631"={	
-				},
-				# Canyon live oak 
-				"805"={
-				},
-				# Oregon white oak 
-				"815"={
-				},
-				# California black oak
-				"818"={
-				},
-				# Willow 
-				"920"={
-				}
-		)			
-		
-		u = Za+(b10+b11*(h/dbh)+b12*(h/dbh)^2)*Zb+b20*Zc # Outside bark taper ratio: di/dbh 
-		
-		# Use regional coefficients to estimate inside bark diameter at breast height (Larsen and Hann, 1985)
-		d1 = u * (a1*dbh^a2) # Bottom diameter (in)
+		# [Eq. 1] Inside bark diameter at height: Hann and Walters (1986) (in)
+		d1 = eq1(dbh,tht,cr,h,species) # Bottom diameter (in)
 		
 		# Compute the stemwood volume between h1 and h2 (ft2) 
 		d1 = d1/12 # Bottom diameter (ft)
@@ -1973,18 +1860,23 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 	# Only consider quality of wood only at the time of harvest 
 	treelist = subset(treelist, mgexp > 0) 
 	
+	# Only allow the bucking and processing of (conifers) [described in the vignette]
+	treelist = subset(treelist, !species %in% c(312,351,361,431,492,631,805,815,818,920))
+	
 	# Scale a large matrix upon maximum number of logs possible to take from each tree
 	scale = treelist$tht/min(c(poleml,sawml,chipml))
 	scale = ceiling(sum(scale))
 	
 	# Preallocate the matrix as NULL values
 	out = try(data.frame(matrix(NA, nrow=scale,ncol=11)), silent=TRUE) 
-	try(names(out) <- c("unit","period","tree","log","type","class","ll","top","cfvol","bfvol","mgexp"),silent=TRUE)
-	
+
 	# If not enough space for allocation: stop and report
 	if(!is.data.frame(out)){
 		return(message("Out of memory. See big data solutions section of vignette. Input database is to large."))
 	}
+	
+	# Provided allocation was successful, assign column names and explicit define output class
+	names(out) <- c("unit","period","tree","log","type","class","ll","top","cfv","bfv","mgexp")
 	
 	i = 1 # Initialize row location in the output object to be populated
 	tick = 0 # Intialize a counter for the progress bar (even if not used)
@@ -2034,8 +1926,8 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 					cut = cut[order(cut$ll,cut$td,decreasing=TRUE),][1,] 
 					
 					# Compute the log volume (cubic and scribner)
-					cfvol = with(x,eq5(dbh,tht,cr,species,h,h+cut$ll)) 
-					bfvol = with(cut,eq4(top,ll))
+					cfv = with(x,eq5(dbh,tht,cr,species,h,h+cut$ll)) 
+					bfv = with(cut,eq4(top,ll))
 					
 					# Associate the remaining log information before moving on
 					cut = merge(cut,
@@ -2043,13 +1935,14 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 									log = k,
 									type = "pole",
 									mgexp = x$mgexp,
-									cfvol = cfvol,
-									bfvol = bfvol
+									cfv = cfv,
+									bfv = bfv,
+									stringsAsFactors=FALSE
 							)
 					)
 					
 					# Save information from the bucked log
-					harvest[[k]] <- cut[c("log","type","class","ll","top","cfvol","bfvol","mgexp")] 
+					harvest[[k]] <- cut[c("log","type","class","ll","top","cfv","bfv","mgexp")] 
 					k = k+1 # Increase the log number (for the next log to be cut)
 					h = h + cut$ll + ta/12 # Increase the height on stem for bucking 
 					
@@ -2083,8 +1976,8 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 					no2 = 100 - (select+no1+no3+econ)
 					
 					# Compute the log volume (cubic and scribner)
-					cfvol = with(x,eq5(dbh,tht,cr,species,h,h+cut$ll))
-					bfvol = with(cut,eq4(top,ll))
+					cfv = with(x,eq5(dbh,tht,cr,species,h,h+cut$ll))
+					bfv = with(cut,eq4(top,ll))
 					
 					# Finalize information about the bucked log 
 					h = h + cut$ll + ta/12 # Increase the bucking height
@@ -2096,13 +1989,14 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 									type = "saw",
 									class = c("select","no1","no2","no3","economy"),
 									mgexp = c(select,no1,no2,no3,econ)/100 * x$mgexp,
-									cfvol = c(select,no1,no2,no3,econ)/100 * cfvol,
-									bfvol = c(select,no1,no2,no3,econ)/100 * bfvol
+									cfv = c(select,no1,no2,no3,econ)/100 * cfv,
+									bfv = c(select,no1,no2,no3,econ)/100 * bfv,
+									stringsAsFactors=FALSE
 							)
 					)
 					
 					# Save information from the bucked log
-					harvest[[k]] <- cut[c("log","type","class","ll","top","cfvol","bfvol","mgexp")]  
+					harvest[[k]] <- cut[c("log","type","class","ll","top","cfv","bfv","mgexp")]  
 					k = k+1 # Increase the log number
 					
 				}
@@ -2124,8 +2018,8 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 					cut = cut[which.max(cut$ll),] # Identify and take the longest possible log 
 					
 					# Compute the log volume (cubic and scribner)
-					cfvol = with(x,eq5(dbh,tht,cr,species,h,h+cut$ll))
-					bfvol = with(cut,eq4(top,ll))
+					cfv = with(x,eq5(dbh,tht,cr,species,h,h+cut$ll))
+					bfv = with(cut,eq4(top,ll))
 					
 					# Finalize information about the bucked log 					
 					h = h + cut$ll + ta/12 # Increase the bucking height
@@ -2137,13 +2031,14 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 									log = k,
 									type = "chip",
 									class = "standard",
-									cfvol = cfvol,
-									bfvol = bfvol
+									cfv = cfv,
+									bfv = bfv,
+									stringsAsFactors=FALSE
 							)
 					)
 					
 					# Save the cut log as harvest data
-					harvest[[k]] <- cut[c("log","type","class","ll","top","cfvol","bfvol","mgexp")] 
+					harvest[[k]] <- cut[c("log","type","class","ll","top","cfv","bfv","mgexp")] 
 					k = k+1 # Increase the log number				
 					
 				}			
@@ -2158,7 +2053,7 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 					
 					# Dub in the processed data
 					n = nrow(harvest) 
-					out[i:(i+(n-1)),names(out)] <<- harvest[names(out)] 
+					out[i:(i+(n-1)),names(out)] <<- harvest[names(out)]
 					i <<- i+n 
 				}
 				

@@ -41,4 +41,10 @@ load.data(...)
 data loader, XLConnect
 }
 
+\examples{
+get.template()
+dat = load.data("CIPSREXAM.xls")
+sapply(dat,head)
+}
+
 
