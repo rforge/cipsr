@@ -122,26 +122,26 @@ Some users will prefer to import their datasets for use in \textit{cipsr} from E
 	\begin{center}
 		\begin{tabular}{ | l | l | l | 1 | p{5cm} |}
 			\hline
-			Code & 	Species & 			SWO & 	NWO & 	SMC \\ \hline
-			015 &	White fir &			Y &		N &		N \\ \hline
-			017	&	Grand fir &			Y &		Y &		Y \\ \hline
-			081	&	Incense cedar &		Y &		N &		N \\ \hline
-			117	&	Sugar pine &		Y &		N &		N \\ \hline
-			122	&	Ponderosa pine &	Y &		N &		N \\ \hline
-			202	&	Douglas-fir	&		Y &		Y &		Y \\ \hline
-			231	&	Pacific yew &		Y &		Y &		Y \\ \hline
-			242	&	Western red cedar &	Y &		Y &		Y \\ \hline
-			263	&	Western hemlock &	Y &		N &		Y \\ \hline
-			312	&	Bigleaf maple &		Y &		Y &		Y \\ \hline
-			351	&	Red alder &			Y &		Y &		Y \\ \hline
-			361	&	Pacific madrone	&	Y &		Y &		Y \\ \hline
-			431	&	Golden chinkapin &	Y &		N &		N \\ \hline
-			492	&	Pacific dogwood &	Y &		Y &		Y \\ \hline
-			631	&	Tanoak &			Y &		N &		N \\ \hline
-			805	&	Canyon live oak	&	Y &		N &		N \\ \hline
-			815	&	Oregon white oak &	Y &		Y &		Y \\ \hline
-			818	&	Calif. black oak &	Y &		N &		N \\ \hline
-			920	&	Willow &			Y &		Y &		Y \\ \hline
+			Code & 	Species & 			SWO & 	NWO & 	SMC \\ \hline 
+			015 &	White fir &			Y &		N &		N  	\\ \hline
+			017	&	Grand fir &			Y &		Y &		Y 	\\ \hline
+			081	&	Incense cedar &		Y &		N &		N 	\\ \hline
+			117	&	Sugar pine &		Y &		N &		N 	\\ \hline
+			122	&	Ponderosa pine &	Y &		N &		N 	\\ \hline
+			202	&	Douglas-fir	&		Y &		Y &		Y 	\\ \hline
+			231	&	Pacific yew &		Y &		Y &		Y 	\\ \hline
+			242	&	Western red cedar &	Y &		Y &		Y 	\\ \hline
+			263	&	Western hemlock &	Y &		N &		Y 	\\ \hline
+			312	&	Bigleaf maple &		Y &		Y &		Y 	\\ \hline
+			351	&	Red alder &			Y &		Y &		Y 	\\ \hline
+			361	&	Pacific madrone	&	Y &		Y &		Y 	\\ \hline
+			431	&	Golden chinkapin &	Y &		N &		N 	\\ \hline
+			492	&	Pacific dogwood &	Y &		Y &		Y 	\\ \hline
+			631	&	Tanoak &			Y &		N &		N 	\\ \hline
+			805	&	Canyon live oak	&	Y &		N &		N 	\\ \hline
+			815	&	Oregon white oak &	Y &		Y &		Y 	\\ \hline
+			818	&	Calif. black oak &	Y &		N &		N 	\\ \hline
+			920	&	Willow &			Y &		Y &		Y 	\\ \hline
 		\end{tabular}
 	\end{center} \\	
 	
@@ -617,11 +617,13 @@ The remaining values of \textit{treeflags} relate to improper specification of v
 	\centering
 	\includegraphics[width=.6\textwidth,left]{fig2}
 	\caption[]{Example graph of relative density over time produced in \textit{cipsr}.}
-	\label{fig:fig1}
+	\label{fig:fig2}
 \end{figure}
 
 
 \section{Post-Processing Output}
+
+\subsection*{A Brief Introduction}
 One of the greatest strengths of \textit{cipsr} is the statistical programming environment it is built upon.  Almost any forestry analysis can be completed using the base packages of R.  If you cannot find a solution in the base packages supplied in R, there are thousands of user-contributed packages (through CRAN and elsewhere) that help you meet an analysis goal.  That goal could be to explore the development of one, ten or ten-thousand units of forestland. \\
 
 A simple example of calling the \texttt{grow} function in \textit{cipsr} and post-processing the output is given below. In this example, we simulate the growth and development of trees in the \texttt{cipsrexam} database up to 100-years stand age.  With this information, we then compute the total harvest of Scribner and cubic volume among each unit.  The final analysis step is to fit a linear model where the response is cubic volume at final felling, and the dependent variables are the site-index and number of harvests taken from each unit.  The purpose of this spurious analysis is demonstration - biometrics can wait for your analysis in \textit{cipsr}. \\
@@ -700,6 +702,57 @@ summary(model)
 <<<eval=TRUE,echo=TRUE>>=
 summary(model)
 @
+
+\subsection*{The Process Function}
+In March 2015, a stem bucking algorithm was added to \textit{cipsr}.  The stem bucking algorithm is incorporated into the function \textit{process}, and allows a user to simulate harvesting of poles, saw and chip logs.  Users can control the parameters of bucking by submitting arguments to the process function as a list.  A set of default parameters can be obtained in R by calling the function: \textit{processControl()}.  The default parameters of process are also given in the table below.
+
+\begin{description}
+	\item[pole] \hfill \\
+	Attempt to cut poles from each tree.
+	\item[saw] \hfill \\
+	Attempt to cut saw logs from each tree. 
+	\item[chip] \hfill \\
+	Attempt to cut chip logs from each tree. 
+	\item[polell] \hfill \\
+	Maximum pole length to cut (ft). 
+	\item[poleml] \hfill \\
+	Minimum pole length to cut (ft). 
+	\item[poletd] \hfill \\
+	Minimum pole top diameter (in).
+	\item[polebd] \hfill \\
+	Minimum diameter 6-feet from the pole base (in). 
+	\item[sawll] \hfill \\
+	Maximum saw log length (ft). 
+	\item[sawml] \hfill \\
+	Minimum saw log length (ft). 
+	\item[sawtd] \hfill \\
+	Minimum saw log top diameter (in). 
+	\item[chipll] \hfill \\
+	Maximum chip log length (ft).
+	\item[sh] \hfill \\
+	Stump height (in). 
+	\item[ta] \hfill \\
+	Trim allowance (in). 		
+\end{description}
+
+By default, the \textit{process} function prioritizes harvest of poles, then saw logs and finally chip logs.  Poles are cut with emphasize upon maximizing size and grade given many dimensional specifications (Fig. 3).  A requirement of 1.25 inches of sapwood in diameter at the base of each pole is also imposed.  Saw logs are bucked into lumber classes using the equations of Fahey et al. (1991).  Read more about these equations at 'Lumber and Veneer Recovery from Intensively Managed Young-Growth Douglas-fir' - Fahey et al. (1991) pp. 14. \\ 
+
+\begin{figure}[!ht]
+	\centering
+	\includegraphics[width=.6\textwidth,left]{pole_table}
+	\caption[]{Pole specifications implemented in the \textit{process} function.}
+	\label{fig:pole_table}
+\end{figure}
+
+An example of using the \textit{process} function is given below.  In this example, we explore the controls of \textit{process} and make a simulation using the default control values.  A second bucking simulation is made, but in this simulation we request the \textit{process} function not harvest any poles.
+
+\begin{lstlisting}
+treelist = grow(cipsrexam)$treelist
+processControl()
+complete = process(treelist,ProgressBar=TRUE)
+partial = process(treelist,control=list(pole=FALSE))
+\end{lstlisting}
+
 
 \section{Big Data Solutions}
 The \textit{cipsr} software has been designed to handle very large forestry analysis tasks.  Still, some users may consider forestry problems which are large enough to require a customized solution. Examples are these problems are when: 90-percent of the available memory allocated to R is used; the output from a single simulation exceeds 1,000 megabytes; or if an Excel file to import or export has a least one sheet in excess of 65,536 rows.  There are many definitions for big data, but if any of the already mentioned constraints is met in \textit{cipsr}, we consider the problem one with a big data component. \\

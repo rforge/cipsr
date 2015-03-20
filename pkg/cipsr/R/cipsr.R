@@ -48,6 +48,7 @@ get.template <- function(){
 	invisible(file.copy(exam, home)) # Copy the example dataset into a users working directory
 }
 
+
 ## Function: Runs Organon and Cipsanon models in R  
 grow <- function(InputList,ProgressBar=FALSE) {
 	
@@ -177,7 +178,7 @@ grow <- function(InputList,ProgressBar=FALSE) {
 		assign('pptdd5',raster(paste(spat,"pptdd5.img",sep="/")),envir=rasters) 
 	}
 	
-	## Function for thinning and fertilization algorithms for Organon & Cipsanon
+	## Internal Function for thinning and fertilization algorithms for Organon & Cipsanon
 	.treatment <- function(executed,activity,triggers) {
 		
 		indicators = rep(0,2) # Treatment indictors for cipsr grow function: (1) for thinning, (2) for fertilization
@@ -526,7 +527,7 @@ grow <- function(InputList,ProgressBar=FALSE) {
 		return(inform) # Return information to inform Organon, based on indicator keys
 	}
 	
-	## Function to run the Cipsanon model in R
+	## Internal Function to run the Cipsanon model in R
 	.cipsanon <- function( sample, unit, activity ) {
 		
 		n = nrow(sample) # Number of trees in the composite sample
@@ -948,7 +949,7 @@ grow <- function(InputList,ProgressBar=FALSE) {
 		return(cipsanon.out) # Return the list
 	}
 	
-	## Function to run the Organon model in R
+	## Internal Function: to run the Organon model in R
 	.organon <- function( sample, unit, activity ) {
 		
 		n = nrow(sample) # Number of trees in the composite sample
@@ -1603,7 +1604,7 @@ grow <- function(InputList,ProgressBar=FALSE) {
 }	
 
 
-## Function returns control values for the quality function
+## Control: returns control values for the quality function
 processControl = function(){
 	
 	# List of default values controlling the quality function
@@ -1613,8 +1614,13 @@ processControl = function(){
 }
 
 
-## Function estimates the quality of individual tree yield resulting from a cipsr simulation
+## Function: estimates the quality of individual tree yield resulting from a cipsr simulation
 process <- function(treelist, control=list(), ProgressBar=FALSE){
+	
+	# Constrain to a select set of tree species for now: capacity to be expanded later
+	if(any(!treelist$species %in% c(202,15,17,122,177,81,231,242,263))){
+		return(message("Unsupported tree species contained in the input.  See vignette for more detail."))
+	}
 		
 	# Test that the control values submitted by the user are supported
 	if(!all(names(control) %in% names(processControl()))){
@@ -1636,10 +1642,10 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 	}
 	
 	# Test for negative values in the controls for bucking stems
-	if(any(sapply(control,function(i) !i>0))){
-		return(message("Negative values in the control list are not allowed."))
+	if(any(sapply(control,function(i)	ifelse(is.numeric(i) & i<0,TRUE,FALSE)))){
+		return(message("Negative values not allowed in the control values."))
 	}
-	
+				
 	# Expel elements of the list into the parent enviornment 
 	sapply(names(control),function(i) assign(i,get(i,control),envir=parent.env(environment())))
 	

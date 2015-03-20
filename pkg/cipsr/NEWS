@@ -1,6 +1,6 @@
 THIS IS THE CHANGELOG OF THE "cipsr" PACKAGE
 
-CHANGES IN VERSION 2.2
+CHANGES IN VERSION 2.2.1
 
 * Vignette was updated with solutions for big data problems
 
@@ -10,5 +10,15 @@ CHANGES IN VERSION 2.2
 
 * Vignette renamed to "introduction": this change may cause some issues for a few users relying 
 on older instructions.  Best to use help(package="cipsr") moving forward.
+
+CHANGES IN VERSION 2.2.2
+
+* Fixed an issues where some outputs were provided as.factor instead of as.character
+
+* New function process() and processControl() provided to simulate tree bucking
+
+* First cut at documentation for the process() function added to the vignette
+
+
 
 
