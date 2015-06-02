@@ -19,6 +19,11 @@ CHANGES IN VERSION 2.2.2
 
 * First cut at documentation for the process() function added to the vignette
 
+CHANGES IN VERSION 2.2.3
+
+* Fixed an typo in an indicator variable for predicting heartwood diameter at height in the process function
+
+* Add a few statements to check databases submitted to the grow function
 
 
 
