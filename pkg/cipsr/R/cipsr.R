@@ -105,12 +105,12 @@ grow <- function(InputList,ProgressBar=FALSE) {
 	index = list(samples$unit,units$unit,activities$unit) # A list of all the provided unit identifiers	
 	if(length(index[[3]])==0) {index[[3]] <- NULL}	# Omit activities from the check if none are supplied
 	# In a combinatorial way, check all table indices match up and record results logically
-	fatal = sapply(1:length(index),function(j){
-				out = !all(sapply(1:2, function(x) index[[j]] %in% index[[x]]))
-				return(out)
-			}
+	fatal = invisible(sapply(1:length(index),function(j){
+					out = !all(sapply(1:2, function(x) index[[j]] %in% index[[x]]))
+					return(out)
+				}
+		)
 	)
-	
 	# Inform user if unit and sample cominations in input dataset fail to match
 	if(any(fatal)) {
 		return(message("\r\n At least one unit and sample combination does not match across the input dataset."))
@@ -1776,6 +1776,7 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 		
 	}
 	
+	# Function for estimating the heartwood core diameter at height
 	# [Eq. 2] Heartwood diameter at height: Maguire (2013) (in)
 	eq2 <- function(tht,dbh,cr,h){
 		
@@ -1798,8 +1799,14 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 		
 		x = (h-1.37)/(hhc-1.37)
 		k = (0.5*hcb-1.37)/(hhc-1.37)
-		i1 = 0; i1[k>0 & x>k] <- 1  
-		i2 = 0; i2[k>0] <- 1	
+		i1 = NA 
+		i1[k<=0 | k>0 & x<=k] <- 0
+		i1[k>0 & x>k] <- 1 
+		
+		i2 = NA
+		i2[k<=0] <- 0
+		i2[k>0] <- 1	
+		
 		w = (x-1)/(k-1)
 		z = (k-x)/(k-1)
 		y1 = i2*(x+i1*(w*(1+z)-1))-(x-1)*(x-i2*x)
@@ -1807,6 +1814,9 @@ process <- function(treelist, control=list(), ProgressBar=FALSE){
 		y3 = i2*(x^2+i1*(k*w*(2*x-k+k*z)-x^2))
 		
 		hdi = hbh *(1-x+y1+(d1*exp(dbh/tht))*y2+(d2*(tht/dbh))*y3)
+		
+		# Heights greater than the heartwood core: must equal zero!
+		hdi[h>=hhc] <- 0
 		
 		hdi = hdi * 0.393701 # Heartwood diameter(converted from cm) (in)
 		
