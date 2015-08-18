@@ -1617,6 +1617,10 @@ processControl = function(){
 ## Function: estimates the quality of individual tree yield resulting from a cipsr simulation
 process <- function(treelist, control=list(), ProgressBar=FALSE){
 	
+	# Report a cautionary message and sleep for a little bit to motivate reading!
+	message("Important notice: Process function is still under development.  Proceed with caution!")
+	Sys.sleep(0.5)
+	
 	# Constrain to a select set of tree species for now: capacity to be expanded later
 	if(any(!treelist$species %in% c(202,15,17,122,177,81,231,242,263))){
 		return(message("Unsupported tree species contained in the input.  See vignette for more detail."))
