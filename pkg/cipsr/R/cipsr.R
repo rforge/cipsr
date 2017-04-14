@@ -1,4 +1,5 @@
 ## R source code for cipsr
+## Last reviewed on 4/14/2017 with CIPS lab
 ## For more information see vignette and description file
 
 ## Function: Imports formatted Excel databases using XLConnect
