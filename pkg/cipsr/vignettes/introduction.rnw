@@ -1,66 +1,57 @@
-\documentclass[letter,11pt]{article}
+% Basic settings for the document
+\documentclass[12pt,authoryear,fleqn]{elsarticle}
+\setlength\parindent{0pt}
+\widowpenalty10000
+\clubpenalty10000
 
-\topmargin 0.0in
-\oddsidemargin 0.0in
-\textwidth 6.5in
-\textheight 9.0in
-\headsep 0.0in
-
-\usepackage[utf8]{inputenc}
-\usepackage[round]{natbib}
-\usepackage{hyperref}
-\usepackage{microtype}
-\usepackage{Sweave}     
-\usepackage{amssymb}
-\usepackage{amsmath}
-\usepackage{upgreek}
-
+% For writing source code in LaTeX
 \usepackage{listings,relsize}
-\lstloadlanguages{R}
-\lstdefinelanguage{Renhanced}[]{R}{%
-	morekeywords={acf,ar,arima,arima.sim,colMeans,colSums,is.na,is.null,%
-		mapply,ms,na.rm,nlmin,replicate,row.names,rowMeans,rowSums,seasonal,%
-		sys.time,system.time,ts.plot,which.max,which.min},
-	deletekeywords={c},
-	alsoletter={.\%},%
-	alsoother={:_\$}}
 
-\lstset{language=Renhanced,extendedchars=true,
-	basicstyle=\small\ttfamily,
-	commentstyle=\textsl,
-	keywordstyle=\mdseries,
-	showstringspaces=false,
-	breaklines=true,
-	index=[1][keywords],
-	indexstyle=\indexfonction}
+% Removes the Elsevier footer with a custom one
+\makeatletter
+\def\ps@pprintTitle{%
+\let\@oddhead\@empty
+\let\@evenhead\@empty
+\def\@oddfoot{\centerline{\thepage}}%
+\let\@evenfoot\@oddfoot}
+\makeatother
 
-\newcommand{\indexfonction}[1]{\index{#1@\texttt{#1}}}
-
-\title{An R Interface to Organon and Cipsanon: \texttt{cipsr}}
-
-\author{
-	Nathaniel Osborne\\Oregon State University\\Peavy Hall A002B\\Corvallis, Oregon 97331\\nathaniel.osborne@oregonstate.edu
-	\and
-	Professor Douglas Maguire\\Oregon State University\\Richardson Hall 312\\Corvallis, Oregon 97331\\doug.maguire@oregonstate.edu
-	\and
-	Professor David Hann\\Oregon State University\\david.hann@oregonstate.edu
-}
-
-\date{\today}
-
-\allowdisplaybreaks[1]
-
+% Begin the document
 \begin{document}
-\baselineskip=15pt              
-\clubpenalty=10000             
+	
+\begin{frontmatter}
+		
+% Title
+\title{An Introduction to the cipsr package}
+		
+% Author names and order
+\author[label1]{Nate Osborne, Biometrician}
+\author[label2]{Doug Maguire, Professor}
+\ead{doug.maguire@oregonstate.edu}
+\author[label2]{Doug Mainwaring, Faculty Research Assistant}
+\author[label2]{David Hann, Professor}
 
-\maketitle
+% Authors current title
+\address[label1]{The Center for Intensive Planted Forest Silviculture}
+\address[label2]{Weyerhaeuser Company}
 
-\abstract{
-\label{sec:Abstract}
-Organon and Cipsanon are two models developed and maintained by the Center for Intensive Planted-forest Silviculture at Oregon State University. These models allow the prediction of growth, yield and wood quality attributes of individual trees under a variety of stand conditions and silvicultural treatments.  This vignette is a brief introduction to the \textit{cipsr} package, which provides an R interface to the Organon and Cipsanon models. 
+% Correspondance address
+\address{
+Oregon State University \\
+Snell Hall 226 \\
+Corvallis, Oregon, 97331 
 }
-
+		
+\begin{abstract}		
+Organon and Cipsanon are two models developed and maintained by the Center for Intensive Planted-forest Silviculture at Oregon State University. These models allow the prediction of growth, yield and wood quality attributes of individual trees under a variety of stand conditions and silvicultural treatments.  This vignette is a brief introduction to the \textbackslash\{\}textit\{cipsr\} package, which provides an R interface to the Organon and Cipsanon models. 	
+\end{abstract}
+		
+\begin{keyword}
+Growth and yield \sep Wood properties \sep Model interfaces \sep Manual
+\end{keyword}
+		
+\end{frontmatter}
+	
 \section{Introduction}
 The mission of the Center for Intensive Planted-forest Silviculture (CIPS) is to understand the interactive effects of genetics, silviculture, protection, competition, nutrition, and soils on the productivity, health, and sustainability of intensively-managed, planted-forests.  This mission is centered around the development and maintenance of a comprehensive, science-based decision-support system for intensive silviculture of planted forests in the Pacific Northwest.  Historically, this decision support system has been known as Organon, which can be accessed through a DOS console. \\
 
@@ -72,320 +63,279 @@ Each version of Organon has been continually developed over the past thirty year
 
 The Center for Intensive Planted-forest Silviculture was established at Oregon State University in 2006 by Doug Maguire.  During this time, Organon has been extensively developed by staff at CIPS.  With collaboration from the OSU Hardwood Silviculture Cooperative (HSC) a Red-Alder version of Organon (RAP-Organon) was produced.  Organon equations have also been enhanced, including the equations for predicting top height, H/D, MCW, LCW, crown profile, HCB, diameter increment, height increment, crown recession rate, mortality rate, size-density trajectory, and thinning multipliers for the dynamic equations.  These improvements were made by Doug Maguire, David Hann, Aaron Weiskittel, Andrew Bluhm and Tzeng Lam. \\
 
-The \textit{cipsr} package is one of the latest improvements directed at the Organon model. This package provides an R interface to the Organon model, as well as a new model called Cipsanon.  Cipsanon is an experimental spin-off of the Organon model.  The Cipsanon model includes unique features not found in Organon: annualized predictions and the ability to predict site index based upon water-holding capacity and growing season precipitation.  The \textit{cipsr} package has also been developed to support coinciding research which enhances both models capacity to predict attributes important to wood quality. \\
+The \textit{cipsr} package is one of the latest improvements directed at the Organon model. This package provides an R interface to the Organon model (v. 9.1), as well as a new model called Cipsanon (v. 1.0).  Cipsanon is an experimental spin-off of the Organon model.  The Cipsanon model includes unique features not found in Organon: annualized predictions and the ability to predict site index based upon water-holding capacity and growing season precipitation.  The \textit{cipsr} package has also been developed to support coinciding research which enhances both models capacity to predict attributes important to wood quality. \\
 
-Users may ask why R has been selected as the new platform for using Organon and Cipsanon, especially given its long history of development as a DOS console.  Early in the development of Organon, it was unclear whether the model should have been developed for a PC or mainframe.  We have faced a similar question in the mature years of Organon: should the model be distributed as software with a graphical user-interface (GUI) or through a programming interface?  We found it best to distribute Organon and Cipsanon through \textit{cipsr} in the R statistical programming environment for a number of reasons.  Many models have become obsolete because advances in operating systems (OS) have outpaced software development.  Code maintained in R, requires much less maintenance than code associated with a forest modeling software, decreasing the chance the model will fall out of currency with a users operating system.  Using Organon in a programming environment offers many benefits beyond that offered in a typical forest model software.  In \textit{cipsr} a user may predict the growth, yield and wood quality of hundreds of forest stands at a time, instead of just one single stand.  With this information the user can access R's powerful post-processing capabilities to apply statistical tests, run optimization routines, produce unique graphs or create customized tables.  R is also a free software, which increases the possibilities for collaboration among many individuals for a certain project or analysis task.  If R does not appeal to you after these compelling arguments, you can still find access to Organon through a host of other methods including DLL files, an Excel application and the DOS console. \\
+Users may ask why R has been selected as the new platform for using Organon and Cipsanon, especially given its long history of development as a DOS console.  Early in the development of Organon, it was unclear whether the model should have been developed for a PC or mainframe.  We have faced a similar question in the mature years of Organon: should the model be distributed as software with a graphical user-interface (GUI) or through a programming interface?  We found it best to distribute Organon and Cipsanon through \textit{cipsr} in the R statistical programming environment for a number of reasons.  Many models have become obsolete because advances in operating systems (OS) have outpaced software development.  Code maintained in R, requires much less maintenance than code associated with a forest modeling software, decreasing the chance the model will fall out of currency with a users operating system.  Using Organon in a programming environment offers many benefits beyond that offered in a typical forest model software.  In \textit{cipsr} a user may predict the growth, yield and wood quality of hundreds of forest stands at a time, instead of just one single stand.  With this information the user can access R's powerful post-processing capabilities to apply statistical tests, run optimization routines, produce unique graphs or create customized tables.  R is also a free software, which increases the possibilities for collaboration among many individuals for a certain project or analysis task.  If R does not appeal to you after these compelling arguments, you can still find access to Organon through a host of other methods including DLL files, an Excel application and the DOS console.
 
 \section{Installation and Loading}
 The \textit{cipsr} package can be downloaded and installed from a repository located on the CIPS webpage (http://cips.forestry.oregonstate.edu/).  This repository also contains dependencies for \textit{cipsr} which are the \textit{XLConnect}, \textit{raster}, \textit{sp} and \textit{rgdal} packages.  To install \textit{cipsr} on your Windows computer, do the following:
 
 \begin{enumerate}
-	\item Ensure your copy of R is version 3.0 or greater. You can download a new copy of R at http://www.r-project.org.  
-	\item Update Java on your computer (https://www.java.com).  If your computer if 64-bits, install both the 32- and 64-bit architectures. 
-	\item Open R (i386 or 64x)
-	\item install.packages("cipsr", repos="http://cips.forestry.oregonstate.edu/sites/cips/files", dependencies=TRUE)
+\item Ensure your copy of R is version 3.0 or greater. You can download a new copy of R at http://www.r-project.org.  
+\item Update Java on your computer (https://www.java.com).  If your computer if 64-bits, install both the 32- and 64-bit architectures. 
+\item Open R (i386 or 64x)
+\item dir = "http://cips.forestry.oregonstate.edu/sites/cips/files" \newline 
+install.packages("cipsr", repos = dir, dependencies=TRUE)
 \end{enumerate}
 
-You may be asked to create a personal R directory after entering the \texttt{install.packages(...)} command.  The default personal directory for most Windows users is located in My Documents.  You can download \textit{cipsr} to any directory, provided your R session is configured correctly.\\
+You may be asked to create a personal R directory after entering the \\ \texttt{install.packages( ...)} command.  The default personal directory for most Windows users is located in My Documents.  You can download \textit{cipsr} to any directory, provided your R session is configured correctly.\\
 
 Provided \textit{cipsr} was properly installed, it can now be loaded.  To load \textit{cipsr} enter \texttt{library(cipsr)} in the R console.  This command provides access to the \textit{cipsr} functions \texttt{load.data}, \texttt{get.template}, \texttt{grow} and an example dataset formatted for use in \textit{cipsr} named \texttt{cipsrexam}.  The function \texttt{load.data} allows the user to load a Microsoft Excel (.xls) database into R, as long as it is correctly formatted. An Excel template formatted for use in \textit{cipsr} can be created in your working directory using \texttt{get.template}.  The function \texttt{grow} simulates forest growth, yield and wood quality attributes provided a \textit{cipsr} formatted dataset.  
 
 \section{Structure of the Input}
-Many users will find formatting data to be the most challenging aspect of using \textit{cipsr}.  Datasets used in \textit{cipsr} have a very specific format.  A given dataset should have a list of samples, units and activities.  The samples component of a list contains individual tree information.  In the units component, specifications for the simulation are defined as well as attributes of the forest unit.  The activities component prescribes silvicultural activities to be imposed on each unit, like fertilization or thinning. An R list \texttt{cipsrexam}, is provided after loading \textit{cipsr} as an example.  In the code below, the first few rows of \texttt{cipsrexam} are shown: \\
-
-<<<eval=TRUE,echo=FALSE>>=
-options(width=65)
-@
-
-<<<eval=TRUE,echo=TRUE>>=
-library(cipsr) 
-lapply(cipsrexam,function(x) x[1:5,]) 
-@
+Many users will find formatting data to be the most challenging aspect of using \textit{cipsr}.  Datasets used in \textit{cipsr} have a very specific format.  A given dataset should have a list of samples, units and activities.  The samples component of a list contains individual tree information.  In the units component, specifications for the simulation are defined as well as attributes of the forest unit.  The activities component prescribes silvicultural activities to be imposed on each unit, like fertilization or thinning. An R list \texttt{cipsrexam}, is provided after loading \textit{cipsr} as an example. \\
 
 Some users will prefer to import their datasets for use in \textit{cipsr} from Excel, rather than produce an R object formatted like \texttt{cipsrexam}.  In Microsoft Excel, this workbook should consist of three worksheet tabs named:  samples, units and activities).  For an example Excel template enter the command \texttt{get.template()}.  This command creates an Excel document called 'CIPSREXAM.xls' in your current R working directory.  You can identify the current working directory using \texttt{getwd()}.  CIPSREXAM.xls--or a file you create based off this template--may be loaded into R using the \texttt{load.data} command. The following is a demonstration of how to obtain the CIPSREXAM.xls file and then load it into R: \\  
+
 \noindent
 \subsection{The samples component}
 \begin{description}
-	\item[unit] \hfill \\  
-	Identifies the sampled stand (unit) of trees.
-	\item[sample] \hfill \\ 
-	Identifies the sample nested within a unit.
-	\item[tree] \hfill \\ 
-	Identifies an individual tree within a sample and unit.
-	\item[expan] \hfill \\ 
-	Expansion factor (trees/acre).
-	\item[user] \hfill \\ 
-	Stand age (years) to remove a given tree.  This value is associated with the user thinning approach which may be specified in \textit{activities}.  A value of 0 indicates that the user thinning approach will not be used.
-	\item[species] \hfill \\  
-	Tree species identification code.  The table below lists species names and their corresponding codes.  It also indicates whether that species is supported within different model variants. SWO is Southwestern Oregon, NWO is Northwest Oregon and SMC is the Stand Management Cooperative variant. \\
-	
-	\begin{center}
-		\begin{tabular}{ | l | l | l | 1 | p{5cm} |}
-			\hline
-			Code & 	Species & 			SWO & 	NWO & 	SMC \\ \hline 
-			015 &	White fir &			Y &		N &		N  	\\ \hline
-			017	&	Grand fir &			Y &		Y &		Y 	\\ \hline
-			081	&	Incense cedar &		Y &		N &		N 	\\ \hline
-			117	&	Sugar pine &		Y &		N &		N 	\\ \hline
-			122	&	Ponderosa pine &	Y &		N &		N 	\\ \hline
-			202	&	Douglas-fir	&		Y &		Y &		Y 	\\ \hline
-			231	&	Pacific yew &		Y &		Y &		Y 	\\ \hline
-			242	&	Western red cedar &	Y &		Y &		Y 	\\ \hline
-			263	&	Western hemlock &	Y &		N &		Y 	\\ \hline
-			312	&	Bigleaf maple &		Y &		Y &		Y 	\\ \hline
-			351	&	Red alder &			Y &		Y &		Y 	\\ \hline
-			361	&	Pacific madrone	&	Y &		Y &		Y 	\\ \hline
-			431	&	Golden chinkapin &	Y &		N &		N 	\\ \hline
-			492	&	Pacific dogwood &	Y &		Y &		Y 	\\ \hline
-			631	&	Tanoak &			Y &		N &		N 	\\ \hline
-			805	&	Canyon live oak	&	Y &		N &		N 	\\ \hline
-			815	&	Oregon white oak &	Y &		Y &		Y 	\\ \hline
-			818	&	Calif. black oak &	Y &		N &		N 	\\ \hline
-			920	&	Willow &			Y &		Y &		Y 	\\ \hline
-		\end{tabular}
-	\end{center} \\	
-	
-	\item[dbh] \hfill \\ 
-	Diameter at breast height (inches).
-	\item[tht] \hfill \\ 
-	Total tree height (feet). The total height of each tree is not required. If left equal zero, this value will be estimated.
-	\item[cr] \hfill \\ 
-	Crown ratio.  This is the crown length of a tree (feet) divided by the total tree height (feet). If left equal zero, this value will be estimated. The crown ratio of each tree is not required. If left equal zero, this value will be estimated.
-	\item[radgro] \hfill \\ 
-	Five-year radial growth (inches). The radial growth of each tree is not required. If left equal zero, this value will be estimated.
-\end{description} 
+\item[unit] \hfill \\  
+Identifies the sampled stand (unit) of trees.
+\item[sample] \hfill \\ 
+Identifies the sample nested within a unit.
+\item[tree] \hfill \\ 
+Identifies an individual tree within a sample and unit.
+\item[expan] \hfill \\ 
+Expansion factor (trees/acre).
+\item[user] \hfill \\ 
+Stand age (years) to remove a given tree.  This value is associated with the user thinning approach which may be specified in \textit{activities}.  A value of 0 indicates that the user thinning approach will not be used.
+\item[species] \hfill \\  
+Tree species identification code (Table \ref{table1}).  The table below lists species names and their corresponding codes.  It also indicates whether that species is supported within different model variants. SWO is Southwestern Oregon, NWO is Northwest Oregon and SMC is the Stand Management Cooperative variant. \\	
+\item[dbh] \hfill \\ 
+Diameter at breast height (inches).
+\item[tht] \hfill \\ 
+Total tree height (feet). The total height of each tree is not required. If left equal zero, this value will be estimated.
+\item[cr] \hfill \\ 
+Crown ratio.  This is the crown length of a tree (feet) divided by the total tree height (feet). If left equal zero, this value will be estimated. The crown ratio of each tree is not required. If left equal zero, this value will be estimated.
+\item[radgro] \hfill \\ 
+Five-year radial growth (inches). The radial growth of each tree is not required. If left equal zero, this value will be estimated.
+\end{description}
 
 \noindent
 \subsection{The units component}
 \begin{description}
-	\item[unit] \hfill \\ 
-	Identifier for the sampled stand (unit) of trees.
-	\item[latitude] \hfill \\ 
-	Latitude (decimal degrees) of the unit. This value is only necessary when using the Cipsanon model and you want to condition growth on whc and pptdd, but do not supply estimates of those variables.
-	\item[longitude] \hfill \\ 
-	Longitude (decimal degrees) of the unit. This value is only necessary when using the Cipsanon model and you want to condition growth on whc and pptdd, but do not supply estimates of those variables.
-	\item[pptdd] \hfill \\ 
-	Precipitation for degree days greater than or equal to 41 degrees F. A value of zero indicates that this value will be estimated by \textit{cipsr}.  A value for pptdd is only necessary when the Cipsanon model is in use and you want to condition growth using whc and pptdd, instead of site-index.
-	\item[whc] \hfill \\ 
-	Water holding capacity of the top 20 inches of soil. A value  of zero indicates that this value will be estimated by \textit{cipsr}. A value for whc is only necessary when the Cipsanon model is in use and you want to condition growth using whc and pptdd, instead of site-index.
-	\item[wantplot] \hfill \\ 
-	Indicates where to produce a series of descriptive graphs. 
-	\begin{description}
-		\item[0] No graphs should be made
-		\item[1] Make graphs in R session
-		\item[2] Print graphs to a folder in the working directory
-	\end{description}
-	\item[wanttable] \hfill \\ 
-	Indicates whether or not to produce a table of results outside of R.  A limit of 65,536 rows of Excel output is enforced. If row limit is exceeded, you will be informed and referred to the big data section of this vignette.
-	\begin{description}
-		\item[0] No table should be printed to the working directory
-		\item[1] Print an Excel table to a folder the working directory
-	\end{description}
-	\item[woodqual] \hfill \\ 
-	Indicates whether or not to estimate wood quality attributes of individual trees.
-	\begin{description}
-		\item[0] Do not estimate wood quality attributes.
-		\item[1] Estimate wood quality attributes.
-	\end{description}	
-	\item[model] \hfill \\ 
-	Model to be used in the simulation.
-	\begin{description}
-		\item[1] Organon
-		\item[2] Cipsanon
-	\end{description}		
-	\item[variant] \hfill \\ 
-	Model variant to be used.
-	\begin{description}
-		\item[1] SWO - Southwest Oregon
-		\item[2] NWO - Northwest Oregon
-		\item[3] SMC - Stand Management Cooperative
-	\end{description}	 
-	\item[driver] \hfill \\ 
-	If Cipsanon is in use, this defines how to drive site productivity.
-	\begin{description}
-		\item[0] Use a traditional site index estimate
-		\item[1] Do not use site index: condition growth on whc and pptdd. Only the SWO variant of Cipsanon allows this option.
-	\end{description}	
-	\item[groyrs] \hfill \\ 
-	Number of years to grow the unit.  If Organon is used, this number should only be in 5-year increments.  If Cipsanon is used, this number can be in 1-year increments.
-	\item[iseven] \hfill \\ 
-	Indicates whether or not the unit is even-aged.
-	\begin{description}
-		\item[0] The unit is uneven aged
-		\item[1] The unit is even aged
-	\end{description}	
-	\item[partcut] \hfill \\ 
-	Indicates whether or not the unit has been partially harvested in the past.
-	\begin{description}
-		\item[0] The unit has not been partially harvested
-		\item[1] The unit has been partially harvested
-	\end{description}	
-	\item[pastfert] \hfill \\ 
-	Indicates whether or not the unit has been fertilized in the past.
-	\begin{description}
-		\item[0] The unit has not been fertilized
-		\item[1] The unit has been fertilized
-	\end{description}	
-	\item[stage] \hfill \\ 
-	Total age of the unit (years). If the unit is uneven-aged, this value must be zero.
-	\item[bhage] \hfill \\ 
-	Breast height age of the unit (years).
-	\item[dfsi] \hfill \\ 
-	Douglas-fir 50-year site index, depending on model variant. 
-	\begin{description}
-		\item[NWO] Hann and Scrivani (1987)
-		\item[SWO] Bruce (1981)
-		\item[SMC] Bruce (1981) for Organon and Flewelling et al. (2001) for Cipsanon
-	\end{description}
-	\item[otsi] \hfill \\ 
-	Other species 50-year site-index, depending on model variant.  
-	\begin{description}
-		\item[NWO] Flewelling et al. (2001) Western hemlock
-		\item[SWO] Hann and Scrivani (1987) ponderosa pine site
-		\item[SMC] Flewelling et al. (2001) Western hemlock
-	\end{description}
-	\item[dhcal] \hfill \\ 
-	Indicates whether or not diameter and height should be calibrated.
-	\begin{description}
-		\item[0] Do not calibrate diameter and height
-		\item[1] Calibrate diameter and height
-	\end{description}
-	\item[ccal] \hfill \\
-	Indicates whether or not crown ratio should be calibrated. 
-	\begin{description}
-		\item[0] Do not calibrate crown ratio
-		\item[1] Calibrate crown ratio
-	\end{description}
-	\item[dgrocal] \hfill \\ 
-	Indicates whether or not diameter growth should be calibrated.
-	\begin{description}
-		\item[0] Do not calibrate diameter growth
-		\item[1] Calibrate diameter growth
-	\end{description}
-	\item[triple] \hfill \\ 
-	Indicates whether or not to use tripling in the simulation.
-	\begin{description}
-		\item[0] Do not triple the tree list
-		\item[1] Triple the tree list
-	\end{description}
-	\item[maxsdi] \hfill \\ 
-	Indicates whether or not to enforce a maximum size-density limit.
-	\begin{description}
-		\item[0] Do not enforce limit
-		\item[1] Enforce a maximum size-density limit
-	\end{description}
-	\item[dfsdi] \hfill \\ 
-	Douglas-fir maximum size-density index.  If left equal zero, a default maximum size-density of 520 is used.
-	\item[wgsdi] \hfill \\ 
-	White/Grand fir maximum size-density index. If left equal zero, a variant specific default maximum size-density is used.
-	\item[phsdi] \hfill \\ 
-	Ponderosa pine/Western hemlock maximum size density index. If left equal zero, a variant specific default maximum size-density is used.
-	\item[gdval] \hfill \\ 
-	Douglas-fir genetic worth value for diameter growth. If you are not conditioning growth on genetic worth, leave this value equal zero.
-	\item[ghval] \hfill \\ 
-	Douglas-fir genetic worth value for height growth. If you are not conditioning growth on genetic worth, leave this value equal zero.
-	\item[dfret] \hfill \\ 
-	Needle retention of Douglas-fir infected by Swiss-needle cast. If the unit is not infected with Swiss needle cast, leave this value equal zero.
-	\item[genes] \hfill \\ 
-	Use genetic worth values for diameter and height growth.
-	\begin{description}
-		\item[0] Do not use genetic worth values
-		\item[1] Use genetic worth values for diameter and height growth
-	\end{description}
-	\item[snc] \hfill \\ 
-	Indicates whether a unit is infected with Swiss needle cast.
-	\begin{description}
-		\item[0] Unit is not infected with Swiss needle cast
-		\item[1] Unit is infected with Swiss needle cast
-	\end{description}
-	\item[core] \hfill \\ 
-	Definition of the juvenile wood code when estimating wood quality attributes.
-	\begin{description}
-		\item[0] Assume age definition
-		\item[1] Assume crown definition
-	\end{description}
-	\item[cftd] \hfill \\ 
-	Top diameter inside bark for cubic foot volume estimation (inches). 
-	\item[cfsh] \hfill \\ 
-	Stump height for cubic foot volume estimation (feet).
-	\item[logll] \hfill \\ 
-	Log length for Scribner volume estimation (feet). If set to zero, a default log length of 32 feet is used.
-	\item[logml] \hfill \\ 
-	Minimum log length for Scribner volume estimation (feet). If set to zero, a default minimum log length of 8 feet is used.
-	\item[logtd] \hfill \\ 
-	Top diameter inside bark for Scribner volume estimation (inches). If set to zero, a default top diameter of 6 inches is used.
-	\item[logsh] \hfill \\ 
-	Stump height for Scribner volume estimation (feet). If set to zero, a default stump height of 0.5 feet is used.
-	\item[logta] \hfill \\ 
-	Trim allowance for Scribner volume estimation (inches). If set to zero, a default trim allowance of 8 inches is used.  	
+\item[unit] \hfill \\ 
+Identifier for the sampled stand (unit) of trees.
+\item[latitude] \hfill \\ 
+Latitude (decimal degrees) of the unit. This value is only necessary when using the Cipsanon model and you want to condition growth on whc and pptdd, but do not supply estimates of those variables.
+\item[longitude] \hfill \\ 
+Longitude (decimal degrees) of the unit. This value is only necessary when using the Cipsanon model and you want to condition growth on whc and pptdd, but do not supply estimates of those variables.
+\item[pptdd] \hfill \\ 
+Precipitation for degree days greater than or equal to 41 degrees F. A value of zero indicates that this value will be estimated by \textit{cipsr}.  A value for pptdd is only necessary when the Cipsanon model is in use and you want to condition growth using whc and pptdd, instead of site-index.
+\item[whc] \hfill \\ 
+Water holding capacity of the top 20 inches of soil. A value  of zero indicates that this value will be estimated by \textit{cipsr}. A value for whc is only necessary when the Cipsanon model is in use and you want to condition growth using whc and pptdd, instead of site-index.
+\item[wantplot] \hfill \\ 
+Indicates where to produce a series of descriptive graphs. 
+\begin{description}
+\item[0] No graphs should be made
+\item[1] Make graphs in R session
+\item[2] Print graphs to a folder in the working directory
+\end{description}
+\item[wanttable] \hfill \\ 
+Indicates whether or not to produce a table of results outside of R.  A limit of 65,536 rows of Excel output is enforced. If row limit is exceeded, you will be informed and referred to the big data section of this vignette.
+\begin{description}
+\item[0] No table should be printed to the working directory
+\item[1] Print an Excel table to a folder the working directory
+\end{description}
+\item[woodqual] \hfill \\ 
+Indicates whether or not to estimate wood quality attributes of individual trees.
+\begin{description}
+\item[0] Do not estimate wood quality attributes.
+\item[1] Estimate wood quality attributes.
+\end{description}	
+\item[model] \hfill \\ 
+Model to be used in the simulation.
+\begin{description}
+\item[1] Organon
+\item[2] Cipsanon
+\end{description}		
+\item[variant] \hfill \\ 
+Model variant to be used.
+\begin{description}
+\item[1] SWO - Southwest Oregon
+\item[2] NWO - Northwest Oregon
+\item[3] SMC - Stand Management Cooperative
+\end{description}	 
+\item[driver] \hfill \\ 
+If Cipsanon is in use, this defines how to drive site productivity.
+\begin{description}
+\item[0] Use a traditional site index estimate
+\item[1] Do not use site index: condition growth on whc and pptdd. Only the SWO variant of Cipsanon allows this option.
+\end{description}	
+\item[groyrs] \hfill \\ 
+Number of years to grow the unit.  If Organon is used, this number should only be in 5-year increments.  If Cipsanon is used, this number can be in 1-year increments.
+\item[iseven] \hfill \\ 
+Indicates whether or not the unit is even-aged.
+\begin{description}
+\item[0] The unit is uneven aged
+\item[1] The unit is even aged
+\end{description}	
+\item[partcut] \hfill \\ 
+Indicates whether or not the unit has been partially harvested in the past.
+\begin{description}
+\item[0] The unit has not been partially harvested
+\item[1] The unit has been partially harvested
+\end{description}	
+\item[pastfert] \hfill \\ 
+Indicates whether or not the unit has been fertilized in the past.
+\begin{description}
+\item[0] The unit has not been fertilized
+\item[1] The unit has been fertilized
+\end{description}	
+\item[stage] \hfill \\ 
+Total age of the unit (years). If the unit is uneven-aged, this value must be zero.
+\item[bhage] \hfill \\ 
+Breast height age of the unit (years).
+\item[dfsi] \hfill \\ 
+Douglas-fir 50-year site index, depending on model variant. 
+\begin{description}
+\item[NWO] \cite{Hann1987}
+\item[SWO] \cite{Bruce1981}
+\item[SMC] \cite{Bruce1981} (Organon); \cite{Flewelling2001} (Cipsanon)
+\end{description}
+\item[otsi] \hfill \\ 
+Other species 50-year site-index, depending on model variant.  
+\begin{description}
+\item[NWO] \cite{Flewelling2001}
+\item[SWO] \cite{Hann1987}
+\item[SMC] \cite{Flewelling2001}
+\end{description}
+\item[dhcal] \hfill \\ 
+Indicates whether or not diameter and height should be calibrated.
+\begin{description}
+\item[0] Do not calibrate diameter and height
+\item[1] Calibrate diameter and height
+\end{description}
+\item[ccal] \hfill \\
+Indicates whether or not crown ratio should be calibrated. 
+\begin{description}
+\item[0] Do not calibrate crown ratio
+\item[1] Calibrate crown ratio
+\end{description}
+\item[dgrocal] \hfill \\ 
+Indicates whether or not diameter growth should be calibrated.
+\begin{description}
+\item[0] Do not calibrate diameter growth
+\item[1] Calibrate diameter growth
+\end{description}
+\item[triple] \hfill \\ 
+Indicates whether or not to use tripling in the simulation.
+\begin{description}
+\item[0] Do not triple the tree list
+\item[1] Triple the tree list
+\end{description}
+\item[maxsdi] \hfill \\ 
+Indicates whether or not to enforce a maximum size-density limit.
+\begin{description}
+\item[0] Do not enforce limit
+\item[1] Enforce a maximum size-density limit
+\end{description}
+\item[dfsdi] \hfill \\ 
+Douglas-fir maximum size-density index.  If left equal zero, a default maximum size-density of 520 is used.
+\item[wgsdi] \hfill \\ 
+White/Grand fir maximum size-density index. If left equal zero, a variant specific default maximum size-density is used.
+\item[phsdi] \hfill \\ 
+Ponderosa pine/Western hemlock maximum size density index. If left equal zero, a variant specific default maximum size-density is used.
+\item[gdval] \hfill \\ 
+Douglas-fir genetic worth value for diameter growth. If you are not conditioning growth on genetic worth, leave this value equal zero.
+\item[ghval] \hfill \\ 
+Douglas-fir genetic worth value for height growth. If you are not conditioning growth on genetic worth, leave this value equal zero.
+\item[dfret] \hfill \\ 
+Needle retention of Douglas-fir infected by Swiss-needle cast. If the unit is not infected with Swiss needle cast, leave this value equal zero.
+\item[genes] \hfill \\ 
+Use genetic worth values for diameter and height growth.
+\begin{description}
+\item[0] Do not use genetic worth values
+\item[1] Use genetic worth values for diameter and height growth
+\end{description}
+\item[snc] \hfill \\ 
+Indicates whether a unit is infected with Swiss needle cast.
+\begin{description}
+\item[0] Unit is not infected with Swiss needle cast
+\item[1] Unit is infected with Swiss needle cast
+\end{description}
+\item[core] \hfill \\ 
+Definition of the juvenile wood code when estimating wood quality attributes.
+\begin{description}
+\item[0] Assume age definition
+\item[1] Assume crown definition
+\end{description}
+\item[cftd] \hfill \\ 
+Top diameter inside bark for cubic foot volume estimation (inches). 
+\item[cfsh] \hfill \\ 
+Stump height for cubic foot volume estimation (feet).
+\item[logll] \hfill \\ 
+Log length for Scribner volume estimation (feet). If set to zero, a default log length of 32 feet is used.
+\item[logml] \hfill \\ 
+Minimum log length for Scribner volume estimation (feet). If set to zero, a default minimum log length of 8 feet is used.
+\item[logtd] \hfill \\ 
+Top diameter inside bark for Scribner volume estimation (inches). If set to zero, a default top diameter of 6 inches is used.
+\item[logsh] \hfill \\ 
+Stump height for Scribner volume estimation (feet). If set to zero, a default stump height of 0.5 feet is used.
+\item[logta] \hfill \\ 
+Trim allowance for Scribner volume estimation (inches). If set to zero, a default trim allowance of 8 inches is used.  	
 \end{description} 
 
 \noindent
 \subsection{The activities component}
 \begin{description}
-	\item[unit] \hfill \\
-	Identifier for the sampled stand (unit) of trees.
-	\item[trigger] \hfill \\
-	Type of unit condition used to trigger a silvicultural activity.
-	\begin{description}
-		\item[year] Stand age (years)
-		\item[tpa] Number of trees per acre (trees/acre)
-		\item[bap] Basal area per acre (sq. feet/acre)
-		\item[qmd] Quadratic mean diameter (inches)
-		\item[sdi] Stand density index 
-		\item[rel] Relative stand density (percent)
-	\end{description}	
-	\item[when] \hfill \\
-	Level that a given trigger must reach in order to initiate a silvicultural activity (what).
-	\item[what] \hfill \\
-	Silvicultural activity to be carried out if/when a trigger is met.
-	\begin{description}
-		\item[thin] Thin the unit to some target
-		\item[fert] Fertilize the unit to some target
-	\end{description}	
-	\item[how] \hfill \\	
-	Instructions for how a silvicultural activity should be carried out.
-	\begin{description}
-		\item[uniform] Remove trees without respect to social position in the stand
-		\item[below] Remove trees with smaller diameter before trees with larger diameter
-		\item[user] Remove trees at an age specified with a user code in the sample sheet 
-		\item[N] Nitrogen fertilization
-	\end{description}
-	\item[metric] \hfill \\
-	Type of unit condition used to define the residual target of a silvicultural activity.
-	\begin{description}
-		\item[prop] Proportion of the stand to remove 
-		\item[tpa] Trees per acre (trees/ac)
-		\item[bap] Basal area per acre (sq. ft/ac)
-		\item[sdi] Stand density index (index)
-		\item[rel] Relative density (percent)
-		\item[pounds] Pounds of fertilizer to apply per acre
-	\end{description}	
-	\item[target] \hfill \\
-	Intensity of silvicultural treatment in units defined by the metric.				
+\item[unit] \hfill \\
+Identifier for the sampled stand (unit) of trees.
+\item[trigger] \hfill \\
+Type of unit condition used to trigger a silvicultural activity.
+\begin{description}
+\item[year] Stand age (years)
+\item[tpa] Number of trees per acre (trees/acre)
+\item[bap] Basal area per acre (sq. feet/acre)
+\item[qmd] Quadratic mean diameter (inches)
+\item[sdi] Stand density index 
+\item[rel] Relative stand density (percent)
+\end{description}	
+\item[when] \hfill \\
+Level that a given trigger must reach in order to initiate a silvicultural activity (what).
+\item[what] \hfill \\
+Silvicultural activity to be carried out if/when a trigger is met.
+\begin{description}
+\item[thin] Thin the unit to some target
+\item[fert] Fertilize the unit to some target
+\end{description}	
+\item[how] \hfill \\	
+Instructions for how a silvicultural activity should be carried out.
+\begin{description}
+\item[uniform] Remove trees without respect to social position in the stand
+\item[below] Remove trees with smaller diameter before trees with larger diameter
+\item[user] Remove trees at an age specified with a user code in the sample sheet 
+\item[N] Nitrogen fertilization
+\end{description}
+\item[metric] \hfill \\
+Type of unit condition used to define the residual target of a silvicultural activity.
+\begin{description}
+\item[prop] Proportion of the stand to remove 
+\item[tpa] Trees per acre (trees/ac)
+\item[bap] Basal area per acre (sq. ft/ac)
+\item[sdi] Stand density index (index)
+\item[rel] Relative density (percent)
+\item[pounds] Pounds of fertilizer to apply per acre
+\end{description}	
+\item[target] \hfill \\
+Intensity of silvicultural treatment in units defined by the metric.				
 \end{description}
 
 \section{Growth, Yield and Quality}
-An interface to the Organon and Cipsanon models is provided in \textit{cipsr} by calling a series of dynamic link library (DLL) files.  Each DLL file is compiled from Fortran source code specific to the Organon or Cipsanon model.  A list DLL files used and distributed in \textit{cipsr} is given below.  These DLL files may be found in the libs folder of the \textit{cipsr} package: path.package("cipsr") compiled as 32-bits and 64-bits for the Windows operating system. 
+An interface to the Organon and Cipsanon models is provided in \textit{cipsr} by calling a series of dynamic link library (DLL) files (Figure \ref{fig1}).  Each DLL file is compiled from Fortran source code specific to the Organon or Cipsanon model.  A list DLL files used and distributed in \textit{cipsr} is given below.  These DLL files may be found in the libs folder of the \textit{cipsr} package: path.package("cipsr") compiled as 32-bits and 64-bits for the Windows operating system. 
 
 \begin{description}
-	\item[ORGEDIT.dll] Imputation of missing information and calibration
-	\item[ORGRUN.dll] Growth on a 5-year time step
-	\item[ORGVOL.dll] Cubic and Scribner volume yield 
-	\item[ORGWQ.dll] Wood quality attributes from thinning and final harvest
-	\item[CIPSEDIT.dll] Imputation of missing information and calibration
-	\item[CIPSRUN.dll] Growth on a 1-year time step
-	\item[CIPSVOL.dll] Cubic and Scribner volume yield 
+\item[ORGEDIT.dll] Imputation of missing information and calibration
+\item[ORGRUN.dll] Growth on a 5-year time step
+\item[ORGVOL.dll] Cubic and Scribner volume yield 
+\item[ORGWQ.dll] Wood quality attributes from thinning and final harvest
+\item[CIPSEDIT.dll] Imputation of missing information and calibration
+\item[CIPSRUN.dll] Growth on a 1-year time step
+\item[CIPSVOL.dll] Cubic and Scribner volume yield 
 \end{description}
 
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=.6\textwidth,left]{fig1}
-	\caption[]{Flow of information in \textit{cipsr} using the Organon model as an example.}
-	\label{fig:fig1}
-\end{figure}
-
-In \textit{cipsr}, each unit of data (i.e. in samples, units and activities) is processed by either the Organon or Cipsanon DLL files (Fig 1.)  First, missing information in the samples sheet--like total heights or crown ratios--are imputed by an EDIT DLL.  Next, each unit is grown to a certain age (defined by the \textit{groyrs} field in the units sheet) by a RUN DLL.  Silvicultural activities (prescribed in the activities sheet) are imposed during the simulation if their triggering conditions are satisfied by a treatment algorithm embedded in the \textit{grow} function.  If a thinning is applied, a call to estimate wood quality attributes will be made by a WQ subroutine.  With or without thinning, a call to estimate wood quality attributes will be made at the end of the simulation when a final harvest is assumed.  After all units from the input dataset are processed, a few basic stand level statistics are calculated (e.g. \textit{bap} basal area per acre, \textit{rel} relative density). After these attributes are calculated, descriptive plots and an Excel spreadsheet may be created upon user request.
+In \textit{cipsr}, each unit of data (i.e. in samples, units and activities) is processed by either the Organon or Cipsanon DLL files (Figure \ref{fig1})  First, missing information in the samples sheet--like total heights or crown ratios--are imputed by an EDIT DLL.  Next, each unit is grown to a certain age (defined by the \textit{groyrs} field in the units sheet) by a RUN DLL.  Silvicultural activities (prescribed in the activities sheet) are imposed during the simulation if their triggering conditions are satisfied by a treatment algorithm embedded in the \textit{grow} function.  If a thinning is applied, a call to estimate wood quality attributes will be made by a WQ subroutine.  With or without thinning, a call to estimate wood quality attributes will be made at the end of the simulation when a final harvest is assumed.  After all units from the input dataset are processed, a few basic stand level statistics are calculated (e.g. \textit{bap} basal area per acre, \textit{rel} relative density). After these attributes are calculated, descriptive plots and an Excel spreadsheet may be created upon user request.
 
 \subsection{Examples of Using the Grow Function}
 A few examples of using the function \textit{grow} are given below. \\
@@ -399,6 +349,7 @@ dat = load.data("CIPSREXAM.xls")
 grown = grow(dat) 
 \end{lstlisting}
 
+\bigskip
 \noindent
 \textbf{Example 2.} In this example we use the already loaded \textit{cipsrexam} object.  This object is identical to the Excel template one can obtain using \textit{get.template}.  After renaming the \textit{cipsrexam} object to something more meaningful, we remove all of the silvicultural activities planned in the activities sheet.  After these minor changes to \textit{cipsrexam}, we pass the database to the \textit{grow} function.
 \begin{lstlisting}
@@ -408,19 +359,33 @@ dat$activities = dat$activities[0,]
 grown = grow(dat, ProgressBar=FALSE) 
 \end{lstlisting}
 
+\newpage
 \noindent
 \textbf{Example 3.} In this example, we load the \textit{cipsrexam} object and rename it.  After renaming the object, we completely replace the activities sheet with a single silvicultural treatment.  The silvicultural treatment in this case is to remove 0.45-percent of the SDI of unit A from below whenever the SDI exceeds or equals 280.  A modification is also made the units sheet of the input.  Plots are to be drawn in R only for unit A. After growing the \textit{dat} object, we subset output to unit A and only examine the behavior of SDI over time. 
 \begin{lstlisting}
 library(cipsr)
 dat = cipsrexam
-dat$activities = data.frame(unit="A", trigger="sdi", when=280, what="thin", how="below", metric="prop", target=0.45)
+dat$activities = data.frame(
+	unit = "A", 
+	trigger = "sdi", 
+	when = 280, 
+	what = "thin", 
+	how = "below", 
+	metric = "prop", 
+	target = 0.45
+)
+
 dat$units$wantplot = with(dat$units, ifelse(unit=="A",1,0))
 grown = grow(dat)
-subset(grown$samplelist, unit=="A", select=c(unit,subperiod,sdi))
+subset(grown$samplelist, 
+	unit == "A", 
+	select = c(unit,subperiod,sdi)
+)
 \end{lstlisting}
 
-\noindent
+\newpage
 \textbf{Example 4.} The objective of this example was to demonstrate applying a thinning triggered by a unit condition only one time.  You will note that this is generally not the specification for thinning in \textit{cipsr}, except for thinning triggered by a year or user-code.  There are several steps in this analysis, but the general approach can be broken into two parts.  First, units are grown with no silvicultural treatment.  The year when thinning should be applied is found based on the output resulting from this simulation.  Those years for treatment after passes into an object \textit{dat}, along with a complete thinning prescription.  The stand is then grown, with a thinning imposed only one time.  
+
 \begin{lstlisting}
 library(cipsr)
 dat = cipsrexam
@@ -428,396 +393,252 @@ dat$activities = dat$activities[0,]
 
 grown = grow(dat)$samplelist
 when = lapply(split(grown,grown$unit), function(x){
-		when = x$stage[min(which(x$rel>=50))] 
-		out = subset(x, stage==when, select=c(unit,stage)) 
-		names(out)[names(out)=="stage"] <- "when" 
-		return(out)
-	}
+	when = x$stage[min(which(x$rel>=50))] 
+	out = subset(x, stage==when, select=c(unit,stage)) 
+	names(out)[names(out)=="stage"] <- "when" 
+	return(out)
+}
 )
+
 when = do.call("rbind",when)
 
-when = merge(when, data.frame(trigger="year", what="thin", how="below", metric="rel", target=35))
+when = merge(when, data.frame(
+	trigger = "year", 
+	what = "thin", 
+	how = "below", 
+	metric = "rel", 
+	target = 35
+)
+)
 
 dat$activities = when 
 dat$units$wantplot = 1 
 grown = grow(dat)$samplelist 
 
 by(grown,grown$unit,function(x){
-		k = with(x, which(subperiod==1 & stage!=max(stage)))
-		x[sort(c(k,k+1), decreasing=TRUE),]
-	} 
+	k = with(x, which(subperiod==1 & stage!=max(stage)))
+	x[sort(c(k,k+1), decreasing=TRUE),]
+} 
 )
 \end{lstlisting}
 
 \section{Structure of the Output}
+
 \paragraph{Tabular Output}
 Output from the grow function in \textit{cipsr} can be retrieved in the R statistical computing environment or exported as an Excel spreadsheet.  This capacity to produce output from \textit{cipsr} in many ways was based on an expectation that some users may wish to continue their analysis in Excel, SAS, or other analytical frameworks.  Output from the function \texttt{grow} has a format similar to the input.  The output, whether obtained in R or Excel, is a list.  The components of that list include information about individual tree and unit (sample) behavior over the simulation.  Tree and unit level errors and warnings encountered during the simulation are also provided.  These warnings and error messages can be particularly helpful to users not familiar with \textit{cipsr}.  Most errors and warnings can be resolved by modifying specifications for a given simulation in the units sheet of the input dataset. Variables contained within each component of the output list are defined as follows.
 
 \noindent
 \subsection{The treelist component}
 \begin{description}
-	\item[model] \hfill \\
-	Indicates whether Organon or Cipsanon was used.
-	\begin{description}
-		\item[1] Organon
-		\item[2] Cipsanon
-	\end{description}	
-	\item[unit] \hfill \\
-	Unit identifier corresponding with the input dataset.
-	\item[period] \hfill \\
-	Growth period in the simulation.  
-	\item[subperiod] \hfill \\
-	Growth subperiod in the simulation.
-	\begin{description}
-	 	\item[0] Non-harvest subperiod
-	 	\item[1] Harvest subperiod
-	\end{description}
-	\item[stage] \hfill \\
-	Stand age (years).
-	\item[user] \hfill \\
-	Code used to mark trees for harvest at a given stand age (years).
-	\item[tree] \hfill \\
-	Tree identification number.
-	\item[species] \hfill \\
-	Species identification code. Refer to the already mentioned table of species codes.
-	\item[dbh] \hfill \\
-	Diameter at breast height (inches).
-	\item[tht] \hfill \\
-	Total tree height (feet).
-	\item[cr] \hfill \\
-	Crown ratio.
-	\item[expan] \hfill \\
-	Expansion factor (trees/acre). 
-	\item[mgexp] \hfill \\
-	Cut tree expansion factor (trees/acre).
-	\item[cfv] \hfill \\
-	Cubic foot volume. 
-	\item[bfv] \hfill \\
-	Scribner board foot volume.
+\item[model] \hfill \\
+Indicates whether Organon or Cipsanon was used.
+\begin{description}
+\item[1] Organon
+\item[2] Cipsanon
+\end{description}	
+\item[unit] \hfill \\
+Unit identifier corresponding with the input dataset.
+\item[period] \hfill \\
+Growth period in the simulation.  
+\item[subperiod] \hfill \\
+Growth subperiod in the simulation.
+\begin{description}
+\item[0] Non-harvest subperiod
+\item[1] Harvest subperiod
+\end{description}
+\item[stage] \hfill \\
+Stand age (years).
+\item[user] \hfill \\
+Code used to mark trees for harvest at a given stand age (years).
+\item[tree] \hfill \\
+Tree identification number.
+\item[species] \hfill \\
+Species identification code. Refer to the already mentioned table of species codes.
+\item[dbh] \hfill \\
+Diameter at breast height (inches).
+\item[tht] \hfill \\
+Total tree height (feet).
+\item[cr] \hfill \\
+Crown ratio.
+\item[expan] \hfill \\
+Expansion factor (trees/acre). 
+\item[mgexp] \hfill \\
+Cut tree expansion factor (trees/acre).
+\item[cfv] \hfill \\
+Cubic foot volume. 
+\item[bfv] \hfill \\
+Scribner board foot volume.
 \end{description}
 
 \noindent
 \subsection{The samplelist component}
 \begin{description}
-	\item[model] \hfill \\
-	Indicates whether Organon or Cipsanon was used.
-	\begin{description}
-		\item[1] Organon
-		\item[2] Cipsanon
-	\end{description}	
-	\item[unit] \hfill \\
-	Unit identifier corresponding with the input dataset.
-	\item[period] \hfill \\
-	Growth period in the simulation.  
-	\item[subperiod] \hfill \\
-	Growth subperiod in the simulation.
-	\begin{description}
-		\item[0] Non-harvest subperiod
-		\item[1] Harvest subperiod
-	\end{description}
-	\item[stage] \hfill \\
-	Stand age (years).
-	\item[bap] \hfill \\
-	Basal area per acre (sq. feet/acre).
-	\item[tpa] \hfill \\
-	Number of trees per acre (trees/acre).
-	\item[qmd] \hfill \\
-	Quadratic mean diameter (inches).
-	\item[sdi] \hfill \\
-	Stand density index (index).
-	\item[rel] \hfill \\
-	Relative stand density (percent).
-	\item[bfv] \hfill \\
-	Board foot volume per acre (board feet/acre)
-	\item[cfv] \hfill \\
-	Cubic foot volume per acre (cu. feet/acre)
+\item[model] \hfill \\
+Indicates whether Organon or Cipsanon was used.
+\begin{description}
+\item[1] Organon
+\item[2] Cipsanon
+\end{description}	
+\item[unit] \hfill \\
+Unit identifier corresponding with the input dataset.
+\item[period] \hfill \\
+Growth period in the simulation.  
+\item[subperiod] \hfill \\
+Growth subperiod in the simulation.
+\begin{description}
+\item[0] Non-harvest subperiod
+\item[1] Harvest subperiod
+\end{description}
+\item[stage] \hfill \\
+Stand age (years).
+\item[bap] \hfill \\
+Basal area per acre (sq. feet/acre).
+\item[tpa] \hfill \\
+Number of trees per acre (trees/acre).
+\item[qmd] \hfill \\
+Quadratic mean diameter (inches).
+\item[sdi] \hfill \\
+Stand density index (index).
+\item[rel] \hfill \\
+Relative stand density (percent).
+\item[bfv] \hfill \\
+Board foot volume per acre (board feet/acre)
+\item[cfv] \hfill \\
+Cubic foot volume per acre (cu. feet/acre)
 \end{description}
 
 \noindent
 \subsection{The woodquality component}
 \begin{description}
-	\item[unit] \hfill \\
-	Unit identifier corresponding with the input dataset.
-	\item[sample] \hfill \\
-	Sample identifier corresponding with the input dataset.
-	\item[period] \hfill \\
-	Growth period in the simulation.  
-	\item[subperiod] \hfill \\
-	Growth subperiod in the simulation.
-	\begin{description}
-		\item[0] Non-harvest subperiod
-		\item[1] Harvest subperiod
-	\end{description}
-	\item[stage] \hfill \\
-	Stand age (years).
-	\item[tree] \hfill \\
-	Tree identification number.
-	\item[mgexp] \hfill \\
-	Cut tree expansion factor (trees/ac).
-	\item[brht] \hfill \\
-	Branch height at the point of insertion (feet).
-	\item[brdia] \hfill \\
-	Maximum branch diameter for the whorl (inches).
-	\item[jcore] \hfill \\
-	Diameter of the juvenile wood core (inches).
-	\item[idib] \hfill \\
-	Inside bark diameter (inches).
+\item[unit] \hfill \\
+Unit identifier corresponding with the input dataset.
+\item[sample] \hfill \\
+Sample identifier corresponding with the input dataset.
+\item[period] \hfill \\
+Growth period in the simulation.  
+\item[subperiod] \hfill \\
+Growth subperiod in the simulation.
+\begin{description}
+\item[0] Non-harvest subperiod
+\item[1] Harvest subperiod
+\end{description}
+\item[stage] \hfill \\
+Stand age (years).
+\item[tree] \hfill \\
+Tree identification number.
+\item[mgexp] \hfill \\
+Cut tree expansion factor (trees/ac).
+\item[brht] \hfill \\
+Branch height at the point of insertion (feet).
+\item[brdia] \hfill \\
+Maximum branch diameter for the whorl (inches).
+\item[jcore] \hfill \\
+Diameter of the juvenile wood core (inches).
+\item[idib] \hfill \\
+Inside bark diameter (inches).
 \end{description}
 
 \noindent
 \subsection{The standflags component}
 \begin{description}
-	\item[unit] \hfill \\
-	Unit identifier corresponding with the input dataset. 
-	\item[flag] \hfill \\
-	Warning or error message produced by the DLL. 
-	\item[routine] \hfill \\
-	DLL subroutine which produced the error message.
-	\item[level] \hfill \\
-	Level of the message: tree or stand. 
-	\item[type] \hfill \\
-	Indicator if the flag was a warning or error.
-	\item[code] \hfill \\
-	An error and warning message corresponding with the DLL documentation. 
+\item[unit] \hfill \\
+Unit identifier corresponding with the input dataset. 
+\item[flag] \hfill \\
+Warning or error message produced by the DLL. 
+\item[routine] \hfill \\
+DLL subroutine which produced the error message.
+\item[level] \hfill \\
+Level of the message: tree or stand. 
+\item[type] \hfill \\
+Indicator if the flag was a warning or error.
+\item[code] \hfill \\
+An error and warning message corresponding with the DLL documentation. 
 \end{description}
 
 \noindent
 \subsection{The treeflags component}
 \begin{description}
-	\item[unit] \hfill \\
-	Unit identifier corresponding with the input dataset. 
-	
-	\item[sample] \hfill \\
-	Sample identifier corresponding with the input dataset. 
-	\item[tree] \hfill \\
-	Tree identification number.
-	\item[Species Code] \hfill \\
-	Indicator for bad species code. 
-	\item[DBH] \hfill \\
-	Indicator for bad diameter. 
-	\item[HT] \hfill \\
-	Indicator for bad total tree height. 
-	\item[Crown Ratio] \hfill \\
-	Indicator for bad crown ratio. 
-	\item[Expansion Factor] \hfill \\
-	Indicator for bad expansion factor. 
-	\item[Shadow Crown Ratio] \hfill \\
-	Indicator for bad shadow crown ratio. 
-	\item[Height to DBH Ratio] \hfill \\
-	Indicator for total height to diameter ratio.	
+\item[unit] \hfill \\
+Unit identifier corresponding with the input dataset. 
+\item[sample] \hfill \\
+Sample identifier corresponding with the input dataset. 
+\item[tree] \hfill \\
+Tree identification number.
+\item[Species Code] \hfill \\
+Indicator for bad species code. 
+\item[DBH] \hfill \\
+Indicator for bad diameter. 
+\item[HT] \hfill \\
+Indicator for bad total tree height. 
+\item[Crown Ratio] \hfill \\
+Indicator for bad crown ratio. 
+\item[Expansion Factor] \hfill \\
+Indicator for bad expansion factor. 
+\item[Shadow Crown Ratio] \hfill \\
+Indicator for bad shadow crown ratio. 
+\item[Height to DBH Ratio] \hfill \\
+Indicator for total height to diameter ratio.	
 \end{description}
 
 \noindent
 The remaining values of \textit{treeflags} relate to improper specification of variables that control cubic and Scribner volume estimation in the \textit{unit} component of the input dataset. 
 
 \paragraph{Graphical Output}
-\textit{cipsr} also offers users the capability to produce a series of descriptive plots.  These plots, described in R or exported as .bmp files in the working directory, describe the evolution of stand level statistics as a function of time (Fig. 2).  In the future, plots describing individual tree attributes will be made available.    
+\textit{cipsr} also offers users the capability to produce a series of descriptive plots.  These plots, described in R or exported as .bmp files in the working directory, describe the evolution of stand level statistics as a function of time (Figure \ref{fig2}).  In the future, plots describing individual tree attributes will be made available.    
 
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=.6\textwidth,left]{fig2}
-	\caption[]{Example graph of relative density over time produced in \textit{cipsr}.}
-	\label{fig:fig2}
+\section{References}
+\bibliographystyle{elsarticle-harv}
+\bibliography{mybib}
+\biboptions{comma,round}
+
+\newpage
+\section{Tables and Figures}
+
+\begin{table}[h]
+\caption{Species code, name and support within model variants.}
+\label{table1}
+\begin{tabular}{|l|l|l|l|p{5cm}|}
+\hline
+Code & 	Species & 			SWO & 	NWO & 	SMC \\ \hline 
+015 &	White fir &			Y &		N &		N  	\\ \hline
+017	&	Grand fir &			Y &		Y &		Y 	\\ \hline
+081	&	Incense cedar &		Y &		N &		N 	\\ \hline
+117	&	Sugar pine &		Y &		N &		N 	\\ \hline
+122	&	Ponderosa pine &	Y &		N &		N 	\\ \hline
+202	&	Douglas-fir	&		Y &		Y &		Y 	\\ \hline
+231	&	Pacific yew &		Y &		Y &		Y 	\\ \hline
+242	&	Western red cedar &	Y &		Y &		Y 	\\ \hline
+263	&	Western hemlock &	Y &		N &		Y 	\\ \hline
+312	&	Bigleaf maple &		Y &		Y &		Y 	\\ \hline
+351	&	Red alder &			Y &		Y &		Y 	\\ \hline
+361	&	Pacific madrone	&	Y &		Y &		Y 	\\ \hline
+431	&	Golden chinkapin &	Y &		N &		N 	\\ \hline
+492	&	Pacific dogwood &	Y &		Y &		Y 	\\ \hline
+631	&	Tanoak &			Y &		N &		N 	\\ \hline
+805	&	Canyon live oak	&	Y &		N &		N 	\\ \hline
+815	&	Oregon white oak &	Y &		Y &		Y 	\\ \hline
+818	&	Calif. black oak &	Y &		N &		N 	\\ \hline
+920	&	Willow &			Y &		Y &		Y 	\\ \hline
+%\caption{Species code, name and support within model variants.}
+\end{tabular}
+\end{table} 
+
+\newpage
+\begin{figure}[h]
+\centering
+\caption{Flow of information in \textit{cipsr} using the Organon model as an example.}	
+\includegraphics[width=\textwidth]{fig1.jpg}
+\label{fig1}
 \end{figure}
 
-
-\section{Post-Processing Output}
-
-\subsection*{A Brief Introduction}
-One of the greatest strengths of \textit{cipsr} is the statistical programming environment it is built upon.  Almost any forestry analysis can be completed using the base packages of R.  If you cannot find a solution in the base packages supplied in R, there are thousands of user-contributed packages (through CRAN and elsewhere) that help you meet an analysis goal.  That goal could be to explore the development of one, ten or ten-thousand units of forestland. \\
-
-A simple example of calling the \texttt{grow} function in \textit{cipsr} and post-processing the output is given below. In this example, we simulate the growth and development of trees in the \texttt{cipsrexam} database up to 100-years stand age.  With this information, we then compute the total harvest of Scribner and cubic volume among each unit.  The final analysis step is to fit a linear model where the response is cubic volume at final felling, and the dependent variables are the site-index and number of harvests taken from each unit.  The purpose of this spurious analysis is demonstration - biometrics can wait for your analysis in \textit{cipsr}. \\
-
-<<<eval=TRUE,echo=FALSE>>=
-# Post-processing example
-library(cipsr)
-dat = cipsrexam
-dat$units$groyrs=100-dat$units$stage
-dat$units$model=2
-dat$units$variant=ifelse(dat$units$unit %in% c(2,13),1,3) 
-
-dat = lapply(dat,function(x){
-x = subset(x,unit!="12")
-return(x)
-}
-)
-
-dat$units$driver = 0
-dat$units$woodqual = 0 
-dat$units$wantplot = 0; dat$units$wanttable = 0
-grown = grow(dat,ProgressBar=FALSE)$samplelist
-
-yield = subset(grown,stage==100 & subperiod==0 | stage!=100 & subperiod==1, select=c(unit,cfv,bfv,subperiod))
-yield = aggregate(.~unit,data=yield,FUN=sum)
-names(yield)[names(yield)=="subperiod"] <- "harvests"
-yield = merge(yield, subset(dat$units,select=c(unit,dfsi)))
-model = aov(cfv~dfsi+harvests,data=yield)
-@
-
-\noindent
-To start our analysis we must first modify the model specifications in \texttt{cipsrexam}.
-
-\begin{lstlisting}
-library(cipsr)
-dat = cipsrexam
-dat$units$groyrs=100-dat$units$stage
-dat$units$model=2
-dat$units$variant=ifelse(dat$units$unit %in% c(2,13),1,3) 
-
-dat = lapply(dat,function(x){
-		x = subset(x,unit!="12")
-		return(x)
-	}
-)
-
-dat$units$driver = 0
-dat$units$woodqual = 0 
-dat$units$wantplot = 0; dat$units$wanttable = 0
-\end{lstlisting}
-
-\noindent
-With the model setting properly specified, we can simulate the growth and yield of all the units in the \textit{cipsrexam} object.  With that information, we can extract the yields when the stand age is 100-years old for each unit.
-
-\begin{lstlisting}
-grown = grow(dat)$samplelist
-
-yield = subset(grown,stage==100 & subperiod==0 | stage!=100 & subperiod==1, select=c(unit,cfv,bfv,subperiod))
-yield = aggregate(.~unit,data=yield,FUN=sum)
-names(yield)[names(yield)=="subperiod"] <- "harvests"
-yield = merge(yield, subset(dat$units,select=c(unit,dfsi)))
-\end{lstlisting}
-
-<<<eval=TRUE,echo=TRUE>>=
-print(yield)
-@
-
-\noindent
-Fitting our linear model, in the context of an analysis of variance (aov) is straightforward.  We define our response and dependent terms from the yield object described above and use the \textit{aov} function in R.  Alternatively we could have used the functions \textit{lm} or \textit{anova}.
-
-\begin{lstlisting}
-model = aov(cfv~dfsi+harvests,data=yield)
-summary(model)
-\end{lstlisting}
-
-<<<eval=TRUE,echo=TRUE>>=
-summary(model)
-@
-
-\subsection*{The Process Function}
-In March 2015, a stem bucking algorithm was added to \textit{cipsr}.  The stem bucking algorithm is incorporated into the function \textit{process}, and allows a user to simulate harvesting of poles, saw and chip logs.  Users can control the parameters of bucking by submitting arguments to the process function as a list.  A set of default parameters can be obtained in R by calling the function: \textit{processControl()}.  The default parameters of process are also given in the table below.
-
-\begin{description}
-	\item[pole] \hfill \\
-	Attempt to cut poles from each tree.
-	\item[saw] \hfill \\
-	Attempt to cut saw logs from each tree. 
-	\item[chip] \hfill \\
-	Attempt to cut chip logs from each tree. 
-	\item[polell] \hfill \\
-	Maximum pole length to cut (ft). 
-	\item[poleml] \hfill \\
-	Minimum pole length to cut (ft). 
-	\item[poletd] \hfill \\
-	Minimum pole top diameter (in).
-	\item[polebd] \hfill \\
-	Minimum diameter 6-feet from the pole base (in). 
-	\item[sawll] \hfill \\
-	Maximum saw log length (ft). 
-	\item[sawml] \hfill \\
-	Minimum saw log length (ft). 
-	\item[sawtd] \hfill \\
-	Minimum saw log top diameter (in). 
-	\item[chipll] \hfill \\
-	Maximum chip log length (ft).
-	\item[sh] \hfill \\
-	Stump height (in). 
-	\item[ta] \hfill \\
-	Trim allowance (in). 		
-\end{description}
-
-By default, the \textit{process} function prioritizes harvest of poles, then saw logs and finally chip logs.  Poles are cut with emphasize upon maximizing size and grade given many dimensional specifications (Fig. 3).  A requirement of 1.25 inches of sapwood in diameter at the base of each pole is also imposed.  Saw logs are bucked into lumber classes using the equations of Fahey et al. (1991).  Read more about these equations at 'Lumber and Veneer Recovery from Intensively Managed Young-Growth Douglas-fir' - Fahey et al. (1991) pp. 14. \\ 
-
-\begin{figure}[!ht]
-	\centering
-	\includegraphics[width=.6\textwidth,left]{pole_table}
-	\caption[]{Pole specifications implemented in the \textit{process} function.}
-	\label{fig:pole_table}
+\newpage
+\begin{figure}[h]
+\centering
+\caption{Example graph of relative density over time produced in \textit{cipsr}.}	
+\includegraphics[width=\textwidth]{fig2.jpg}
+\label{fig2}
 \end{figure}
 
-An example of using the \textit{process} function is given below.  In this example, we explore the controls of \textit{process} and make a simulation using the default control values.  A second bucking simulation is made, but in this simulation we request the \textit{process} function not harvest any poles.
-
-\begin{lstlisting}
-treelist = grow(cipsrexam)$treelist
-processControl()
-complete = process(treelist,ProgressBar=TRUE)
-partial = process(treelist,control=list(pole=FALSE))
-\end{lstlisting}
-
-
-\section{Big Data Solutions}
-The \textit{cipsr} software has been designed to handle very large forestry analysis tasks.  Still, some users may consider forestry problems which are large enough to require a customized solution. Examples are these problems are when: 90-percent of the available memory allocated to R is used; the output from a single simulation exceeds 1,000 megabytes; or if an Excel file to import or export has a least one sheet in excess of 65,536 rows.  There are many definitions for big data, but if any of the already mentioned constraints is met in \textit{cipsr}, we consider the problem one with a big data component. \\
-
-In general, big data problems can be solved in three ways.  Large problems can be reduced to smaller ones by limiting the scope of analysis, or making the analytical approach more efficient.  If the problem cannot be reduced or made more efficient, the user can increase the amount of computer memory available for analysis.  Memory can be increased in R by installing for RAM on the computer.  In R, a limit of 8 TB of RAM can be used, in the 64-bit version.  A third solution to big data problems is store objects on the hard disc and process them using RAM in chunks.  The current structure of \textit{cipsr} allows users to process large simulations in chunks, or make their analysis more efficient and smaller in scope. Two examples given below, demonstrate processing large datasets in \textit{cipsr}.  Both example use an approach of condensing the problem to minimizing memory use, and processing time in R. \\
-
-\noindent
-\textbf{Example 1.} Extract harvest yields in chunks, retaining only the necessary data.
-
-\begin{lstlisting}
-dat = lapply(cipsrexam, function(x) subset(x, unit=="A"))
-dat$units$wantplot=0; dat$units$wanttable=0 
-
-dat = lapply(1:100, function(i){
-		out = dat # Get the template from a single unit	
-		
-		# Name the unit to be produced
-		out = sapply(out, function(x){x$unit=i;x})
-		
-		# Randomly simulate the sample level data
-		n = nrow(out$samples)
-		dbh = out$samples$dbh
-		out$samples$dbh = rnorm(n, mean(dbh), sd(dbh))
-		out$samples$tht = 0; out$samples$cr = 0
-		
-		return(out) # Return the simulated data
-	}
-)
-
-grown = lapply(dat,function(x){
-	out = grow(x, ProgressBar=FALSE)$samplelist
-	out = subset(out, subperiod==1 | period==max(period))
-	out = aggregate(.~unit, data=out[c("unit","bfv","cfv")], FUN=sum)
-	
-	return(out)			
-	}
-)
-grown = do.call(rbind,grown)
-\end{lstlisting}
-
-\noindent
-\textbf{Example 2.} Extract the full array of cipsr output: constrained to final conditions.
-
-\begin{lstlisting}
-grown = lapply(dat,function(x){
-		out = grow(x, ProgressBar=FALSE)
-		
-		out = sapply(out,function(k){
-				if("period" %in% names(k)){
-					k = subset(k, period==max(period))
-				}
-				return(k)
-			}
-		)
-		
-		return(out)		
-	}
-)
-
-grown = do.call(Map, c(rbind, grown)) 
-\end{lstlisting}
-
-\nocite{}
-\baselineskip=10pt
-\bibliographystyle{apalike}
-\bibliography{references}
-	
 \end{document}
+
+
